@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>-.- Paracasa Paraca -.-</title>
+    <title>Paracasa Paraca</title>
     <style>
         /* Estilos generales y para el responsive */
         body, html {
@@ -20,6 +20,7 @@
             width: 100vw;
             height: 100vh;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
@@ -66,11 +67,20 @@
         /* Estilos del nuevo título del juego */
         #game-title {
             font-family: 'Comic Sans MS', cursive, sans-serif;
-            font-size: 4rem;
+            font-size: 5rem;
             color: #ff6347; /* Un color más llamativo */
             text-shadow: 4px 4px 8px rgba(0,0,0,0.3);
             animation: bounceIn 1s ease-in-out;
+            margin-bottom: 5px;
         }
+        #game-version {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            font-size: 1.5rem;
+            color: #ff6347;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-top: 0;
+        }
+
         @keyframes bounceIn {
             0%, 20%, 40%, 60%, 80%, 100% {
                 transition-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
@@ -118,21 +128,34 @@
             align-items: center;
             margin: 0 20px;
         }
-
-        .character-container img {
+        .character-btn {
+            border: none;
+            background: none;
+            padding: 0;
+            cursor: pointer;
+            margin-top: 10px;
+            position: relative;
+        }
+        .character-btn img {
             width: 150px;
             height: 150px;
             border-radius: 50%;
             border: 5px solid #fff;
             box-shadow: 0 0 15px rgba(0,0,0,0.5);
             transition: transform 0.2s ease;
-            cursor: pointer;
         }
-
-        .character-container img:hover {
+        .character-btn:hover img {
             transform: scale(1.1);
         }
-
+        .character-btn h2 {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            font-size: 2rem;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin: 10px 0 0 0;
+            pointer-events: none; /* Para que el clic se active en el botón y no en el h2 */
+        }
+        
         /* Estilos de la pantalla de juego */
         #game-screen {
             background-color: #87ceeb; /* Fondo de cielo para el juego */
@@ -355,23 +378,55 @@
                 margin-top: 10px; /* Menos margen superior en botones */
             }
         }
+
+        /* Estilos para el botón de silencio */
+        #mute-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border: 2px solid #333;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 20;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+        
+        #mute-button:hover {
+            transform: scale(1.1);
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+        #mute-button img {
+            width: 30px;
+            height: 30px;
+        }
     </style>
 </head>
 <body>
 
     <div class="game-container">
-        
+        <button id="mute-button" style="display: none;">
+            <img id="mute-icon" src="images/sound_on.png" alt="Botón de sonido">
+        </button>
+
         <div id="title-screen" class="screen">
-            <h1 id="game-title">-.- Paracasa Paraca -.-</h1>
+            <h1 id="game-title">Paracasa Paraca</h1>
+            <h2 id="game-version">Version 2.0</h2>
             <button id="start-button" class="btn">Comenzar</button>
         </div>
 
         <div id="introduction-screen" class="screen">
             <img id="intro-image" src="images/Cristina_Peri_intro.png" alt="Ilustración de introducción">
             <p>
-                ¡Alguien, rápido! Los gatos han decidido que la forma más *cool* de viajar es lanzándose de la azotea con paracaídas. El problema es que, después de tantos caprichos y galletas, ¡están más redondos que la luna llena!
+                ¡Chicos, rápido! Los gatos amigos de Paraca y el, han decidido que la forma más *cool* de viajar es lanzándose de la azotea con paracaídas. El problema es que, después de tantos caprichos y galletas, ¡están más redondos que la luna llena!
                 <br><br>
-                Necesitamos tu ayuda. Tienes que atraparlos antes de que aterricen como panqueques. Usa el ratón o tu dedo para moverte de lado a lado y salvar a estos intrépidos, aunque gordos, aventureros. ¡Date prisa!
+                Necesitamos vuestra ayuda. Tenéis que atraparlos antes de que aterricen como tortitas. Usa el ratón o tu dedo para moverte de lado a lado y salvar a estos intrépidos, aunque gordos, aventureros. ¡Daros prisa!
             </p>
             <button id="select-character-button" class="btn">Empezar</button>
         </div>
@@ -380,12 +435,16 @@
             <h1 style="color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Elige tu personaje</h1>
             <div style="display: flex;">
                 <div class="character-container">
-                    <img src="images/Peri_cara.png" alt="Cara de Peri" id="peri-select">
-                    <button class="btn character-btn" data-character="Peri">Peri</button>
+                    <button class="btn character-btn" data-character="Peri">
+                        <img src="images/Peri_cara.png" alt="Cara de Peri">
+                        <h2>Peri</h2>
+                    </button>
                 </div>
                 <div class="character-container">
-                    <img src="images/Cris_cara.png" alt="Cara de Cristina" id="cris-select">
-                    <button class="btn character-btn" data-character="Cris">Cristina</button>
+                    <button class="btn character-btn" data-character="Cris">
+                        <img src="images/Cris_cara.png" alt="Cara de Cristina">
+                        <h2>Cris</h2>
+                    </button>
                 </div>
             </div>
         </div>
@@ -420,6 +479,11 @@
         <div id="player"></div>
     </div>
 
+    <audio id="intro-music" loop></audio>
+    <audio id="ingame-music" loop></audio>
+    <audio id="good-end-music"></audio>
+    <audio id="bad-end-sound"></audio>
+    
     <script>
         // JavaScript para controlar la lógica del juego
         const titleScreen = document.getElementById('title-screen');
@@ -434,6 +498,8 @@
         const readyMessage = document.getElementById('ready-message');
         const ground = document.getElementById('ground');
         const victoryImage = document.getElementById('victory-image');
+        const muteButton = document.getElementById('mute-button');
+        const muteIcon = document.getElementById('mute-icon');
 
         // Marcadores del juego
         const livesDisplay = document.getElementById('lives-display');
@@ -445,6 +511,13 @@
         const playAgainBadButton = document.getElementById('play-again-bad-button');
         const playAgainGoodButton = document.getElementById('play-again-good-button');
         const characterButtons = document.querySelectorAll('.character-btn');
+
+        // Audio elementos
+        const introMusic = document.getElementById('intro-music');
+        const ingameMusic = document.getElementById('ingame-music');
+        const goodEndMusic = document.getElementById('good-end-music');
+        const badEndSound = document.getElementById('bad-end-sound');
+        const allAudioElements = [introMusic, ingameMusic, goodEndMusic, badEndSound];
 
         // Variables del juego
         let fallingCats = [];
@@ -460,7 +533,9 @@
         let totalCatsSpawnedInLevel = 0;
         let gatosProcesadosNivel = 0;
         let fireworksInterval = null;
-        let currentPlayer = 'Peri'; // Nuevo: Variable para el personaje elegido
+        let currentPlayer = 'Peri';
+
+        let isMuted = localStorage.getItem('isMuted') === 'true';
 
         const levelConfig = [
             { catsToCatch: 10, spawnInterval: 1500, minSpeed: 1, maxSpeed: 2 },
@@ -475,21 +550,82 @@
             const screens = document.querySelectorAll('.screen');
             screens.forEach(s => s.style.display = 'none');
             screen.style.display = 'flex';
-        }
-        
-        // Huevo de Pascua para saltar de nivel
-        let clickCount = 0;
-        const skipThreshold = 5;
-        document.addEventListener('click', (event) => {
-            if (gameScreen.style.display === 'flex') {
-                clickCount++;
-                if (clickCount >= skipThreshold) {
-                    console.log("¡Huevo de Pascua activado! Saltando de nivel.");
-                    levelUp();
-                    clickCount = 0;
-                }
+
+            if (screen.id === 'title-screen') {
+                muteButton.style.display = 'none';
             } else {
-                clickCount = 0;
+                muteButton.style.display = 'flex';
+            }
+        }
+
+        // Control de música y sonidos
+        function playMusic(audioElement, src, loop = true) {
+            audioElement.src = `sonido/${src}`;
+            audioElement.loop = loop;
+            audioElement.volume = isMuted ? 0 : 0.5;
+            audioElement.muted = isMuted; // Asegura que el estado de silencio se aplica
+            audioElement.play().catch(e => console.error("Error al reproducir música:", e));
+            if (!isMuted) {
+                fadeIn(audioElement);
+            }
+        }
+
+        function playSoundEffect(src) {
+            if (isMuted) return;
+            const audio = new Audio(`sonido/${src}`);
+            audio.play().catch(e => console.error("Error al reproducir efecto de sonido:", e));
+        }
+
+        function stopAllMusic() {
+            allAudioElements.forEach(music => {
+                fadeOutAndStop(music);
+            });
+        }
+        function fadeIn(audioElement) {
+            const targetVolume = 0.5; // Un volumen más bajo para que no sature
+            const fadeInterval = setInterval(() => {
+                if (audioElement.volume < targetVolume) {
+                    audioElement.volume = Math.min(targetVolume, audioElement.volume + 0.05);
+                } else {
+                    audioElement.volume = targetVolume;
+                    clearInterval(fadeInterval);
+                }
+            }, 100);
+        }
+
+        function fadeOutAndStop(audioElement) {
+            const fadeInterval = setInterval(() => {
+                if (audioElement.volume > 0.05) {
+                    audioElement.volume -= 0.05;
+                } else {
+                    audioElement.volume = 0;
+                    audioElement.pause();
+                    clearInterval(fadeInterval);
+                }
+            }, 100);
+        }
+
+        // Huevo de Pascua - Lógica
+        let keysPressed = {};
+        document.addEventListener('keydown', (e) => {
+            if (gameScreen.style.display === 'flex') {
+                keysPressed[e.key.toLowerCase()] = true;
+                if (keysPressed['j'] && keysPressed['c']) {
+                    levelUp();
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (gameScreen.style.display === 'flex') {
+                keysPressed[e.key.toLowerCase()] = false;
+            }
+        });
+
+        document.addEventListener('touchstart', (e) => {
+            if (gameScreen.style.display === 'flex' && e.touches.length === 3) {
+                levelUp();
+                e.preventDefault();
             }
         });
 
@@ -554,7 +690,6 @@
             }
         }
 
-
         function createCat() {
             const cat = document.createElement('div');
             cat.className = 'falling-object';
@@ -583,6 +718,11 @@
                     catRect.top < playerRect.bottom &&
                     catRect.bottom > playerRect.top
                 ) {
+                    // Sonido de atrapar gato
+                    const catchSounds = ['coger1.mp3', 'coger2.mp3', 'coger3.mp3', 'coger4.mp3'];
+                    const randomCatchSound = catchSounds[Math.floor(Math.random() * catchSounds.length)];
+                    playSoundEffect(randomCatchSound);
+                    
                     currentLevelCatsCaught++; // Incrementa el contador del nivel actual
                     gatosProcesadosNivel++;
                     cat.classList.add('cat-pop');
@@ -631,6 +771,11 @@
                     cat.classList.add('cat-splat');
                     cat.dataset.isDead = 'true';
                     
+                    // Sonido de golpe al suelo
+                    const badSounds = ['golpe1.mp3', 'golpe2.mp3'];
+                    const randomBadSound = badSounds[Math.floor(Math.random() * badSounds.length)];
+                    playSoundEffect(randomBadSound);
+
                     // Llama a la nueva función que maneja la pérdida de vida y reanuda el juego
                     handleLostLife();
                     
@@ -675,11 +820,17 @@
         
         function selectCharacter(character) {
             currentPlayer = character;
+
+            // Sonido de selección de personaje
+            const selectionSounds = [`elegido${character.toLowerCase()}1.mp3`, `elegido${character.toLowerCase()}2.mp3`, `elegido${character.toLowerCase()}3.mp3`];
+            const randomSelectionSound = selectionSounds[Math.floor(Math.random() * selectionSounds.length)];
+            playSoundEffect(randomSelectionSound);
+
             startGame();
         }
 
         function startGame() {
-            // **CORRECCIÓN:** Limpia y reinicia todos los estados del juego
+            // Limpia y reinicia todos los estados del juego
             
             // Elimina cualquier gato remanente en el DOM
             document.querySelectorAll('.falling-object').forEach(cat => cat.remove());
@@ -697,8 +848,12 @@
 
             showScreen(gameScreen);
             
-            // Muestra al personaje en la posición inicial
             player.style.display = 'block';
+
+            fadeOutAndStop(introMusic);
+            playMusic(ingameMusic, '002-ingame.mp3');
+            
+            // Muestra al personaje en la posición inicial
             player.style.backgroundImage = `url("images/${currentPlayer}_parado.gif")`;
             player.style.left = (gameScreen.offsetWidth / 2) - (player.offsetWidth / 2) + 'px';
 
@@ -730,7 +885,10 @@
             totalCatsSpawnedInLevel = 0;
             gatosProcesadosNivel = 0;
 
+            fadeOutAndStop(ingameMusic);
+
             if (isWin) {
+                playMusic(goodEndMusic, `003-finalbueno${currentPlayer.toLowerCase()}.mp3`, false);
                 victoryImage.src = `images/${currentPlayer}_gana.png`;
                 showScreen(endScreenGood);
                 // Inicia la generación de fuegos artificiales de manera continua
@@ -738,6 +896,9 @@
                     fireworksInterval = setInterval(generateFireworks, 800);
                 }
             } else {
+                const badEndSounds = ['final_mal.mp3', 'final_mal2.mp3', 'final_mal3.mp3'];
+                const randomBadEndSound = badEndSounds[Math.floor(Math.random() * badEndSounds.length)];
+                playSoundEffect(randomBadEndSound);
                 showScreen(endScreenBad);
             }
         }
@@ -748,6 +909,8 @@
             currentLevelCatsCaught = 0; // Reinicia el contador de gatos atrapados para el nuevo nivel
             totalCatsSpawnedInLevel = 0; // Reinicia el contador de gatos generados para el nuevo nivel
             gatosProcesadosNivel = 0;
+
+            playSoundEffect('Level_up.mp3');
             
             if (level > levelConfig.length) {
                 endGame(true);
@@ -765,6 +928,19 @@
             }
         }
 
+        function updateMuteIcon() {
+            muteIcon.src = isMuted ? 'images/vozno.png' : 'images/vozsi.png';
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            localStorage.setItem('isMuted', isMuted);
+            updateMuteIcon();
+            allAudioElements.forEach(audio => {
+                audio.muted = isMuted;
+            });
+        }
+
         // Eventos para controlar los botones y el flujo de pantallas
         startButton.addEventListener('click', () => {
             if (document.documentElement.requestFullscreen) {
@@ -776,6 +952,7 @@
             } else if (document.documentElement.msRequestFullscreen) {
                 document.documentElement.msRequestFullscreen();
             }
+            playMusic(introMusic, '001-intro.mp3');
             showScreen(introductionScreen);
         });
 
@@ -785,12 +962,13 @@
         
         characterButtons.forEach(button => {
             button.addEventListener('click', (event) => {
-                const character = event.target.dataset.character;
+                const character = event.currentTarget.dataset.character;
                 selectCharacter(character);
             });
         });
 
         playAgainBadButton.addEventListener('click', () => {
+            stopAllMusic();
             showScreen(titleScreen);
         });
 
@@ -803,8 +981,14 @@
             // Elimina los elementos de fuegos artificiales para una limpieza correcta
             const pyroContainer = endScreenGood.querySelector('.pyro');
             pyroContainer.innerHTML = '<div class="before"></div><div class="after"></div>';
+            stopAllMusic();
             showScreen(titleScreen);
         });
+
+        muteButton.addEventListener('click', toggleMute);
+
+        // Inicializar el estado de silencio al cargar la página
+        updateMuteIcon();
     </script>
 </body>
 </html>
