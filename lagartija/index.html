@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liga LAGARTIJA</title>
+    <style>
+        /* Estilos generales para el cuerpo */
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #000;
+            font-family: 'Arial', sans-serif;
+            position: relative;
+        }
+
+        /* Pantalla de inicio (VESTUARIO) */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('images/vestuario.png');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        #start-screen h1 {
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            margin-bottom: 20px;
+        }
+        
+        #start-screen button {
+            padding: 15px 30px;
+            font-size: 1.5em;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s ease;
+        }
+
+        #start-screen button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Contenedor del mensaje de rotación */
+        #rotation-message {
+            display: none; /* Oculto por defecto */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-align: center;
+            font-size: 1.5em;
+            z-index: 12;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+        }
+        
+        #rotation-icon {
+            width: 80px;
+            height: 80px;
+            margin-top: 20px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Contenedor de la Intro (ESTADIO) */
+        #intro-container {
+            width: 100%;
+            height: 100vh;
+            max-width: 1920px;
+            max-height: 1080px;
+            position: relative;
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-image: url('images/estadio_publico_animado.gif');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+        }
+
+        #logo {
+            width: 50%;
+            max-width: 400px;
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            opacity: 0;
+            animation: fadeInLogo 2s forwards 1s;
+        }
+
+        @keyframes fadeInLogo {
+            to { opacity: 1; }
+        }
+
+        #intro-continue-button {
+            padding: 15px 30px;
+            font-size: 1.5em;
+            color: #fff;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 8px;
+            cursor: not-allowed;
+            position: absolute;
+            bottom: 10%;
+            z-index: 3;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s ease;
+            opacity: 0;
+            animation: fadeInButton 1s forwards 4s;
+        }
+
+        #intro-continue-button.active {
+            cursor: pointer;
+            background-color: #45a049;
+        }
+
+        #intro-continue-button.active:hover {
+            background-color: #3e8e41;
+        }
+
+        @keyframes fadeInButton {
+            to { opacity: 1; }
+        }
+
+        /* Estilos para el efecto de flash en el estadio */
+        .flash-effect {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1;
+            animation: flashFadeOut 0.5s forwards ease-out;
+        }
+
+        @keyframes flashFadeOut {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        /* Transición de apertura de puertas */
+        #transition-door-left, #transition-door-right {
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background-color: #000;
+            z-index: 11;
+            transform: translateX(0);
+            transition: transform 1s ease-in-out;
+            display: none;
+        }
+
+        #transition-door-left {
+            left: 0;
+        }
+
+        #transition-door-right {
+            right: 0;
+        }
+        
+        #transition-door-left.open {
+            transform: translateX(-100%);
+        }
+
+        #transition-door-right.open {
+            transform: translateX(100%);
+        }
+
+        /* ---- Estilos para la pantalla de Instrucciones ---- */
+        #instructions-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        
+        #instructions-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            max-width: 1200px;
+            max-height: 800px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        #pizarra-imagen-container {
+            width: 100%;
+            min-height: 250px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        
+        #pizarra-imagen-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: contain;
+        }
+
+        #pizarra-text {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            color: #1a1a1a;
+            font-size: 1.1em;
+            line-height: 1.6;
+            text-align: left;
+            background-color: #fff;
+        }
+        
+        #pizarra-text h3 {
+            color: #000;
+            margin-top: 0;
+            margin-bottom: 0.5em;
+            font-size: 1.2em;
+        }
+
+        #pizarra-text ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        #pizarra-text ul li {
+            margin-bottom: 0.5em;
+            position: relative;
+            padding-left: 1.5em;
+        }
+        #pizarra-text ul li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        #pizarra-continue-button {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 1.4em;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s ease;
+        }
+
+        #pizarra-continue-button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Media Queries para adaptabilidad */
+        @media (min-width: 769px) {
+            #instructions-content-wrapper {
+                flex-direction: row;
+                height: 80vh;
+                max-height: 800px;
+            }
+            #pizarra-imagen-container {
+                flex-basis: 50%;
+                min-height: auto;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 10px;
+                box-sizing: border-box;
+            }
+            #pizarra-imagen-container img {
+                height: 100%;
+                width: auto;
+            }
+            #pizarra-text {
+                flex-basis: 50%;
+                height: 100%;
+                overflow-y: auto;
+            }
+            #pizarra-continue-button {
+                position: absolute;
+                bottom: 20px;
+                right: 20px;
+                margin-top: 0;
+            }
+        }
+        
+        /* Estilos para la pantalla de Diálogo (VESTUARIO 2) */
+        #dialogue-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('images/vestuario2.png');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            color: #fff;
+            display: none;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #saul-image {
+            max-height: 90vh;
+            width: auto;
+            align-self: flex-end;
+            margin-bottom: 0;
+        }
+        
+        #dialogue-content {
+            width: 45%;
+            height: 80%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: #000;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #dialogue-content p {
+            font-size: 1.2em;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        #dorsal-buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 300px;
+            margin-top: 20px;
+        }
+
+        .dorsal-button {
+            padding: 10px;
+            font-size: 1.1em;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .dorsal-button:hover {
+            background-color: #0056b3;
+        }
+
+        #confirmation-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        #confirmation-container p {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        #confirmation-buttons {
+            display: flex;
+            gap: 15px;
+        }
+        
+        #confirmation-buttons button {
+            padding: 10px 20px;
+            font-size: 1em;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #confirm-yes {
+            background-color: #4CAF50;
+        }
+        
+        #confirm-yes:hover {
+            background-color: #45a049;
+        }
+
+        #confirm-no {
+            background-color: #dc3545;
+        }
+
+        #confirm-no:hover {
+            background-color: #c82333;
+        }
+
+        /* ---- Estilos para la nueva pantalla de Moneda ---- */
+        #coin-toss-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('images/cesped.png');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            display: none;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-end;
+            box-sizing: border-box;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+
+        #referee-and-content-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-end;
+            width: 90%;
+            max-width: 1200px;
+            height: 100%;
+        }
+
+        #referee-image {
+            max-height: 85vh;
+            width: auto;
+            align-self: flex-end;
+            z-index: 1;
+        }
+
+        #referee-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+            text-align: center;
+            padding-bottom: 20px;
+        }
+
+        #initial-referee-dialogue {
+            font-size: 1.2em;
+            line-height: 1.5;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+        
+        #coin-buttons {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        #coin-buttons img {
+            width: 100%;
+            max-width: 150px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        #coin-buttons img:hover {
+            transform: scale(1.05);
+        }
+
+        #toss-animation-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            width: 600px;
+            height: 600px;
+            z-index: 5;
+        }
+        
+        #toss-animation-container img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        #toss-result-container {
+            position: absolute;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            width: 400px;
+            height: 400px;
+            z-index: 4;
+        }
+        
+        #toss-result-container img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        #final-result-text {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            text-align: center;
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        #continue-button {
+            display: none;
+            padding: 15px 30px;
+            font-size: 1.5em;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s ease;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        /* MEDIA QUERIES PARA ADAPTABILIDAD EN MÓVILES */
+        @media (max-width: 768px) {
+            
+            /* Pantalla de inicio - Mensaje de rotación */
+            #start-screen {
+                justify-content: flex-start;
+                padding-top: 10%;
+            }
+            #rotation-message {
+                display: block; /* Muestra el mensaje en móviles */
+            }
+            #start-screen h1, #start-screen button {
+                display: none; /* Oculta el contenido principal en vertical */
+            }
+
+            /* Pantalla de intro - Logo más pequeño */
+            #logo {
+                width: 70%;
+            }
+
+            /* Pantalla de Diálogo - Layout en columna */
+            #dialogue-screen {
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                padding: 10px;
+            }
+            
+            #saul-image {
+                align-self: center;
+                margin-bottom: 10px;
+                max-height: 50vh;
+            }
+
+            #dialogue-content {
+                width: 95%; /* Ocupa más ancho en móvil */
+                height: auto;
+                padding: 15px;
+            }
+            #dialogue-content p {
+                font-size: 1em;
+            }
+
+            #dorsal-buttons {
+                /* Ajusta la cuadrícula de los dorsales para que se vean todos */
+                grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+                gap: 5px;
+                max-width: none;
+            }
+
+            #confirmation-container {
+                margin-top: 10px;
+            }
+
+            /* Pantalla de la Moneda - Layout en columna */
+            #coin-toss-screen {
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                padding-bottom: 0;
+            }
+            
+            #referee-and-content-container {
+                flex-direction: column;
+                width: 90%;
+            }
+
+            #referee-image {
+                align-self: center;
+                margin-bottom: 20px;
+                max-height: 60vh;
+            }
+
+            #referee-content {
+                width: 100%;
+                padding-bottom: 0;
+            }
+
+            #initial-referee-dialogue {
+                width: 100%;
+                margin-bottom: 20px;
+                padding: 15px;
+                background-color: rgba(255, 255, 255, 0.5);
+                border-radius: 10px;
+                color: #000;
+            }
+
+            #coin-buttons {
+                position: static;
+                transform: none;
+                margin-top: 20px;
+            }
+
+            #coin-buttons img {
+                max-width: 100px;
+            }
+
+            #toss-animation-container, #toss-result-container {
+                width: 150px;
+                height: 150px;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                right: auto;
+                bottom: auto;
+            }
+            
+            #final-result-text {
+                font-size: 1.5em;
+            }
+        }
+        /* Muestra el mensaje de rotación solo en orientación vertical y móvil */
+        @media (orientation: portrait) and (max-width: 768px) {
+            #rotation-message {
+                display: block;
+            }
+            #start-screen h1, #start-screen button {
+                display: none;
+            }
+        }
+        /* Oculta el mensaje de rotación si la pantalla es horizontal */
+        @media (orientation: landscape) {
+            #rotation-message {
+                display: none;
+            }
+            #start-screen h1, #start-screen button {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <h1>¡Ya está el público en el campo!</h1>
+        <button id="ready-button">¿Estás listo?</button>
+        <div id="rotation-message">
+            <p>Para una mejor experiencia, gira tu dispositivo</p>
+            <div id="rotation-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-screen-share-off">
+                    <path d="M13 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/>
+                    <path d="M7 17v5"/>
+                    <path d="M17 17v5"/>
+                    <path d="M17 5v-2"/>
+                    <path d="M17 21v-2"/>
+                    <path d="M10 21h-2a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2"/>
+                    <path d="m14 17-5-5"/>
+                    <path d="m14 11-5-5"/>
+                    <line x1="14" y1="11" x2="14" y2="11"/>
+                    <line x1="9" y1="6" x2="9" y2="6"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div id="intro-container">
+        <img id="logo" src="images/logo_transp.png" alt="Liga LAGARTIJA Logo">
+        <button id="intro-continue-button">EMPEZAR</button>
+    </div>
+    
+    <div id="instructions-screen">
+        <div id="instructions-content-wrapper">
+            <div id="pizarra-imagen-container">
+                <img src="images/pizarra.png" alt="Pizarra de instrucciones">
+            </div>
+            <div id="pizarra-text">
+                <h3>Mecánica de Juego</h3>
+                <p>El juego se juega por turnos.</p>
+                <h3>Tu turno (Atacando)</h3>
+                <ul>
+                    <li>Elige tu disparo: La portería tiene 3 zonas imaginarias: izquierda, arriba y derecha. Pincha en la que prefieras.</li>
+                    <li>La máquina decide: El portero rival saltará aleatoriamente a una de las tres zonas.</li>
+                </ul>
+                <h3>Turno de la máquina (Defendiendo)</h3>
+                <ul>
+                    <li>Elige tu parada: Pincha en una de las tres zonas imaginarias de la portería para que tu portero salte a pararla.</li>
+                    <li>La máquina chuta: La máquina elegirá una de las tres zonas para lanzar su tiro.</li>
+                </ul>
+                <h3>Reglas de la Partida</h3>
+                <ul>
+                    <li>Se juegan 6 tiros en total; 3 por cada jugador.</li>
+                    <li>Si hay un empate, se pasará a la "muerte súbita":
+                        <ul>
+                            <li>Ambos jugadores tiran una vez.</li>
+                            <li>Si uno marca y el otro falla, el que marca gana inmediatamente.</li>
+                            <li>Si ambos marcan o ambos fallan, el juego continúa hasta que uno gane.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <button id="pizarra-continue-button">Continuar</button>
+    </div>
+
+    <div id="dialogue-screen">
+        <img id="saul-image" src="images/barca/saul_frontal.png" alt="Saúl">
+        <div id="dialogue-content">
+            <p>"¡Hola, soy Saúl!. Ayúdame a ganar al Real Madrid en la Liga Lagartija. Yo haré la vez de jugador lanzador y de portero en el Futbol Club Barcelona. Ahora, dime que dorsal te gustaría que tuviese."</p>
+            <div id="dorsal-buttons"></div>
+            <div id="confirmation-container">
+                <p>¿Estás conforme?</p>
+                <div id="confirmation-buttons">
+                    <button id="confirm-yes">SI, adelante</button>
+                    <button id="confirm-no">NO, quiero otro</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="coin-toss-screen">
+        <div id="referee-and-content-container">
+            <img id="referee-image" src="images/arbitro_solo.png" alt="Árbitro">
+            <div id="referee-content">
+                <div id="initial-referee-dialogue">
+                    <p>Hola soy Antonio "El gordo", amigo de Javi. Voy a ser el arbitro de la sesión de penaltis de la Liga Lagartija. Vamos a decidir quien chuta primero. selecciona que lado de la moneda elijes, CARA o CRUZ, pulsando en las monedas.</p>
+                </div>
+                <div id="coin-buttons">
+                    <img id="coin-cara-button" src="images/mon_cara.png" alt="Cara">
+                    <img id="coin-cruz-button" src="images/mon_cruz.png" alt="Cruz">
+                </div>
+            </div>
+        </div>
+        <div id="toss-animation-container">
+            <img id="toss-animation-image" src="images/lanza.png" alt="Lanzando moneda">
+        </div>
+        <div id="toss-result-container">
+            <img id="toss-result-image" src="" alt="Resultado del lanzamiento">
+        </div>
+        <div id="final-result-text"></div>
+        <button id="continue-button">Continuar</button>
+    </div>
+
+    <div id="transition-door-left"></div>
+    <div id="transition-door-right"></div>
+
+    <audio id="audio-track1" src="sonido/001.mp3" loop></audio>
+    <audio id="audio-track2" src="sonido/002-nombre_dorsal.mp3" loop></audio>
+
+    <script>
+        const startScreen = document.getElementById('start-screen');
+        const readyButton = document.getElementById('ready-button');
+        const introContainer = document.getElementById('intro-container');
+        const introContinueButton = document.getElementById('intro-continue-button');
+        const instructionsScreen = document.getElementById('instructions-screen');
+        const pizarraContinueButton = document.getElementById('pizarra-continue-button');
+        const dialogueScreen = document.getElementById('dialogue-screen');
+        const coinTossScreen = document.getElementById('coin-toss-screen');
+        const rotationMessage = document.getElementById('rotation-message');
+
+        const saulImage = document.getElementById('saul-image');
+        const dorsalButtonsContainer = document.getElementById('dorsal-buttons');
+        const confirmationContainer = document.getElementById('confirmation-container');
+        const confirmYesButton = document.getElementById('confirm-yes');
+        const confirmNoButton = document.getElementById('confirm-no');
+        const dialogueText = document.querySelector('#dialogue-content p');
+
+        const initialRefereeDialogue = document.getElementById('initial-referee-dialogue');
+        const coinButtons = document.getElementById('coin-buttons');
+        const tossAnimationContainer = document.getElementById('toss-animation-container');
+        const tossResultContainer = document.getElementById('toss-result-container');
+        const tossResultImage = document.getElementById('toss-result-image');
+        const finalResultText = document.getElementById('final-result-text');
+        const continueButton = document.getElementById('continue-button');
+
+        const doorLeft = document.getElementById('transition-door-left');
+        const doorRight = document.getElementById('transition-door-right');
+
+        const audioTrack1 = document.getElementById('audio-track1');
+        const audioTrack2 = document.getElementById('audio-track2');
+
+        const baseVolume = 0.2;
+        audioTrack1.volume = 0;
+        audioTrack2.volume = 0;
+        let currentAudioTrack = null;
+        let flashInterval;
+
+        // Genera los 25 botones de dorsal
+        for (let i = 1; i <= 25; i++) {
+            const button = document.createElement('button');
+            button.className = 'dorsal-button';
+            button.textContent = i;
+            button.dataset.dorsal = i;
+            dorsalButtonsContainer.appendChild(button);
+        }
+
+        function generateFlash() {
+            const flash = document.createElement('div');
+            flash.classList.add('flash-effect');
+            const containerRect = introContainer.getBoundingClientRect();
+            const containerWidth = containerRect.width;
+            const containerHeight = containerRect.height;
+            const topGradaYMin = containerHeight * 0.15;
+            const topGradaYMax = containerHeight * 0.30;
+            const bottomGradaYMin = containerHeight * 0.35;
+            const bottomGradaYMax = containerHeight * 0.60;
+            const randomX = Math.random() * containerWidth;
+            let randomY;
+            if (Math.random() < 0.5) {
+                randomY = topGradaYMin + Math.random() * (topGradaYMax - topGradaYMin);
+            } else {
+                randomY = bottomGradaYMin + Math.random() * (bottomGradaYMax - bottomGradaYMin);
+            }
+            const flashSize = 20 + Math.random() * 30;
+            flash.style.width = `${flashSize}px`;
+            flash.style.height = `${flashSize}px`;
+            flash.style.left = `${randomX - flashSize / 2}px`;
+            flash.style.top = `${randomY - flashSize / 2}px`;
+            introContainer.appendChild(flash);
+        }
+
+        function startFlashEffect() {
+            flashInterval = setInterval(() => {
+                const randomDelay = 200 + Math.random() * 800;
+                setTimeout(generateFlash, randomDelay);
+            }, 500);
+        }
+
+        function fadeInAudio(audioElement, finalVolume, duration = 1000) {
+            audioElement.play();
+            const step = finalVolume / (duration / 50);
+            let currentVolume = audioElement.volume;
+            const fadeInterval = setInterval(() => {
+                currentVolume += step;
+                if (currentVolume >= finalVolume) {
+                    audioElement.volume = finalVolume;
+                    clearInterval(fadeInterval);
+                } else {
+                    audioElement.volume = currentVolume;
+                }
+            }, 50);
+        }
+
+        function fadeOutAudio(audioElement, duration = 1000) {
+            const step = audioElement.volume / (duration / 50);
+            let currentVolume = audioElement.volume;
+            const fadeInterval = setInterval(() => {
+                currentVolume -= step;
+                if (currentVolume <= 0) {
+                    audioElement.volume = 0;
+                    audioElement.pause();
+                    clearInterval(fadeInterval);
+                } else {
+                    audioElement.volume = currentVolume;
+                }
+            }, 50);
+        }
+
+        // Lógica para el mensaje de rotación
+        function checkOrientation() {
+            const isMobile = window.innerWidth <= 768;
+            const isPortrait = window.innerHeight > window.innerWidth;
+            if (isMobile && isPortrait) {
+                startScreen.style.backgroundImage = 'none';
+                rotationMessage.style.display = 'block';
+                document.body.style.backgroundColor = '#000';
+            } else {
+                startScreen.style.backgroundImage = 'url("images/vestuario.png")';
+                rotationMessage.style.display = 'none';
+                document.body.style.backgroundColor = 'transparent';
+            }
+        }
+        window.addEventListener('resize', checkOrientation);
+        window.addEventListener('load', checkOrientation);
+
+        readyButton.addEventListener('click', () => {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            } else if (document.documentElement.mozRequestFullScreen) {
+                document.documentElement.mozRequestFullScreen();
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen();
+            } else if (document.documentElement.msRequestFullscreen) {
+                document.documentElement.msRequestFullscreen();
+            }
+            
+            fadeInAudio(audioTrack1, baseVolume);
+            currentAudioTrack = audioTrack1;
+
+            introContainer.style.display = 'flex';
+            doorLeft.style.display = 'block';
+            doorRight.style.display = 'block';
+            
+            setTimeout(() => {
+                startScreen.style.display = 'none';
+            }, 50);
+
+            setTimeout(() => {
+                doorLeft.classList.add('open');
+                doorRight.classList.add('open');
+            }, 100);
+
+            setTimeout(() => {
+                doorLeft.style.display = 'none';
+                doorRight.style.display = 'none';
+                introContinueButton.classList.add('active');
+                startFlashEffect();
+            }, 1500);
+        });
+
+        introContinueButton.addEventListener('click', (e) => {
+            if (introContinueButton.classList.contains('active')) {
+                fadeOutAudio(audioTrack1);
+                
+                setTimeout(() => {
+                    fadeInAudio(audioTrack2, baseVolume);
+                    currentAudioTrack = audioTrack2;
+                    
+                    introContainer.style.display = 'none';
+                    instructionsScreen.style.display = 'flex';
+                    clearInterval(flashInterval);
+                }, 1000);
+            }
+        });
+
+        pizarraContinueButton.addEventListener('click', () => {
+            instructionsScreen.style.display = 'none';
+            dialogueScreen.style.display = 'flex';
+        });
+
+        dorsalButtonsContainer.addEventListener('click', (event) => {
+            if (event.target.classList.contains('dorsal-button')) {
+                const dorsalNumber = event.target.dataset.dorsal;
+                saulImage.src = `images/barca/dorsal/saul_anim_${dorsalNumber}.gif`;
+                
+                dialogueText.textContent = `Has elegido el dorsal ${dorsalNumber}.`;
+
+                dorsalButtonsContainer.style.display = 'none';
+                confirmationContainer.style.display = 'flex';
+            }
+        });
+
+        confirmYesButton.addEventListener('click', () => {
+            dialogueScreen.style.display = 'none';
+            coinTossScreen.style.display = 'flex';
+        });
+
+        confirmNoButton.addEventListener('click', () => {
+            dialogueText.textContent = "¡Hola, soy Saúl!. Ayúdame a ganar al Real Madrid en la Liga Lagartija. Yo haré la vez de jugador lanzador y de portero en el Futbol Club Barcelona. Ahora, dime que dorsal te gustaría que tuviese.";
+            dorsalButtonsContainer.style.display = 'grid';
+            confirmationContainer.style.display = 'none';
+            saulImage.src = `images/barca/saul_frontal.png`;
+        });
+        
+        coinButtons.addEventListener('click', (event) => {
+            if (event.target.id === 'coin-cara-button' || event.target.id === 'coin-cruz-button') {
+                const userChoice = event.target.id === 'coin-cara-button' ? 'cara' : 'cruz';
+                
+                // Oculta el texto y los botones de la moneda
+                initialRefereeDialogue.style.display = 'none';
+                coinButtons.style.display = 'none';
+                
+                // Muestra la animación de lanzamiento
+                tossAnimationContainer.style.display = 'block';
+
+                setTimeout(() => {
+                    // Oculta la animación de lanzamiento
+                    tossAnimationContainer.style.display = 'none';
+                    
+                    // Lanza la moneda al azar
+                    const tossResult = Math.random() < 0.5 ? 'cara' : 'cruz';
+                    tossResultImage.src = tossResult === 'cara' ? 'images/sel_cara.png' : 'images/sel_cruz.png';
+                    tossResultContainer.style.display = 'block';
+
+                    setTimeout(() => {
+                        // Oculta el resultado visual y muestra el texto final
+                        tossResultContainer.style.display = 'none';
+                        finalResultText.style.display = 'block';
+                        if (userChoice === tossResult) {
+                            finalResultText.textContent = "¡Empieza el Fútbol Club Barcelona!";
+                        } else {
+                            finalResultText.textContent = "¡Empieza el Real Madrid!";
+                        }
+                        continueButton.style.display = 'block';
+                    }, 2000); // 2 segundos de espera
+                }, 2000); // 2 segundos de espera
+            }
+        });
+    </script>
+</body>
+</html>
