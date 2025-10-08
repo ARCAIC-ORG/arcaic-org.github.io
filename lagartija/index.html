@@ -1,0 +1,2504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liga Lagartija</title>
+    <style>
+        /* Estilos generales para el cuerpo */
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #000;
+            font-family: 'Arial', sans-serif;
+            position: relative;
+        }
+
+        /* Pantalla de carga (Preloader) */
+        #loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+            color: #fff;
+            font-size: 1.5em;
+            z-index: 100;
+            transition: opacity 1s ease-out;
+        }
+
+        #loading-text {
+            margin-top: 20px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Pantalla de inicio (VESTUARIO) */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('images/vestuario.png');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            color: #fff;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        #start-screen h1 {
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            margin-bottom: 20px;
+        }
+        
+        #start-screen button {
+            padding: 15px 30px;
+            font-size: 1.5em;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s ease;
+        }
+
+        #start-screen button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Contenedor del mensaje de rotaci�n */
+        #rotation-message {
+            display: none; /* Oculto por defecto */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-align: center;
+            font-size: 1.5em;
+            z-index: 12;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+        }
+        
+        #rotation-icon {
+            width: 80px;
+            height: 80px;
+            margin-top: 20px;
+            animation: spin 2s linear infinite;
+        }
+
+        /* Contenedor de la Intro (ESTADIO) */
+        #intro-container {
+            width: 100%;
+            height: 100vh;
+            max-width: 1920px;
+            max-height: 1080px;
+            position: relative;
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-image: url('images/estadio_publico_animado.gif');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+        }
+
+        #logo {
+            width: 50%;
+            max-width: 400px;
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            opacity: 0;
+            animation: fadeInLogo 2s forwards 1s;
+        }
+
+        @keyframes fadeInLogo {
+            to { opacity: 1; }
+        }
+
+        #intro-continue-button {
+            padding: 15px 30px;
+            font-size: 1.5em;
+            color: #fff;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 8px;
+            cursor: not-allowed;
+            position: absolute;
+            bottom: 10%;
+            z-index: 3;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s ease;
+            opacity: 0;
+            animation: fadeInButton 1s forwards 4s;
+        }
+
+        #intro-continue-button.active {
+            cursor: pointer;
+            background-color: #45a049;
+        }
+
+        #intro-continue-button.active:hover {
+            background-color: #3e8e41;
+        }
+
+        @keyframes fadeInButton {
+            to { opacity: 1; }
+        }
+
+        /* Estilos para el efecto de flash en el estadio */
+        .flash-effect {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1;
+            animation: flashFadeOut 0.5s forwards ease-out;
+        }
+
+        @keyframes flashFadeOut {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        /* Transici�n de apertura de puertas */
+        #transition-door-left, #transition-door-right {
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background-color: #000;
+            z-index: 11;
+            transform: translateX(0);
+            transition: transform 1s ease-in-out;
+            display: none;
+        }
+
+        #transition-door-left {
+            left: 0;
+        }
+
+        #transition-door-right {
+            right: 0;
+        }
+        
+        #transition-door-left.open {
+            transform: translateX(-100%);
+        }
+
+        #transition-door-right.open {
+            transform: translateX(100%);
+        }
+
+        /* ---- Estilos para la pantalla de Instrucciones ---- */
+        #instructions-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        
+        #instructions-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            max-width: 1200px;
+            max-height: 800px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        #pizarra-imagen-container {
+            width: 100%;
+            min-height: 250px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        
+        #pizarra-imagen-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: contain;
+        }
+
+        #pizarra-text {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            color: #1a1a1a;
+            font-size: 1.1em;
+            line-height: 1.6;
+            text-align: left;
+            background-color: #fff;
+        }
+        
+        #pizarra-text h3 {
+            color: #000;
+            margin-top: 0;
+            margin-bottom: 0.5em;
+            font-size: 1.2em;
+        }
+
+        #pizarra-text ul {
+            list-style-type: disc; 
+            padding-left: 1.5em; 
+        }
+        #pizarra-text ul li {
+            margin-bottom: 0.5em;
+        }
+        
+        #pizarra-continue-button {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 1.4em;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s ease;
+        }
+
+        #pizarra-continue-button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Media Queries para adaptabilidad */
+        @media (min-width: 769px) {
+            #instructions-content-wrapper {
+                flex-direction: row;
+                height: 80vh;
+                max-height: 800px;
+            }
+            #pizarra-imagen-container {
+                flex-basis: 50%;
+                min-height: auto;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 10px;
+                box-sizing: border-box;
+            }
+            #pizarra-imagen-container img {
+                height: 100%;
+                width: auto;
+            }
+            #pizarra-text {
+                flex-basis: 50%;
+                height: 100%;
+                overflow-y: auto;
+            }
+            /* Bot�n movido a la izquierda y debajo del contenido */
+            #pizarra-continue-button {
+                position: static;
+                margin-top: 20px;
+                align-self: flex-start;
+                margin-left: 20px;
+            }
+        }
+        
+        /* ---- Estilos para la pantalla de Di�logo (VESTUARIO 2) ---- */
+        #dialogue-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('images/vestuario2.png');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            color: #fff;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #dialogue-wrapper {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-end;
+            width: 90%;
+            max-width: 1200px;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            height: 80%;
+        }
+
+        #saul-image {
+            max-height: 100%;
+            width: auto;
+            align-self: flex-end;
+        }
+        
+        #dialogue-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: #000;
+            padding-left: 20px;
+            box-sizing: border-box;
+            height: 100%;
+        }
+
+        #dialogue-content p {
+            font-size: 1.2em;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            width: 100%; 
+        }
+
+        #dorsal-buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 300px;
+            margin-top: 20px;
+        }
+
+        .dorsal-button {
+            padding: 10px;
+            font-size: 1.1em;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .dorsal-button:hover {
+            background-color: #0056b3;
+        }
+
+        #confirmation-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        #confirmation-container p {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        #confirmation-buttons {
+            display: flex;
+            gap: 15px;
+        }
+        
+        #confirmation-buttons button {
+            padding: 10px 20px;
+            font-size: 1em;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #confirm-yes {
+            background-color: #4CAF50;
+        }
+        
+        #confirm-yes:hover {
+            background-color: #45a049;
+        }
+
+        #confirm-no {
+            background-color: #dc3545;
+        }
+
+        #confirm-no:hover {
+            background-color: #c82333;
+        }
+
+        /* ---- Estilos para la nueva pantalla de Moneda ---- */
+        #coin-toss-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('images/cesped.png');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            display: none;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-end;
+            box-sizing: border-box;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+
+        #referee-and-content-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-end;
+            width: 90%;
+            max-width: 1200px;
+            height: 100%;
+        }
+
+        #referee-image {
+            max-height: 85vh;
+            width: auto;
+            align-self: flex-end;
+            z-index: 1;
+        }
+
+        #referee-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+            text-align: center;
+            padding-bottom: 20px;
+        }
+
+        #initial-referee-dialogue {
+            font-size: 1.2em;
+            line-height: 1.5;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+        
+        #coin-buttons {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        #coin-buttons img {
+            width: 100%;
+            max-width: 150px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        #coin-buttons img:hover {
+            transform: scale(1.05);
+        }
+
+        #toss-animation-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            width: 250px; /* Tama�o m�s peque�o */
+            height: 250px; /* Tama�o m�s peque�o */
+            z-index: 5;
+        }
+        
+        #toss-animation-container img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        #toss-result-container {
+            position: absolute;
+            bottom: 5%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            width: 400px;
+            height: 400px;
+            z-index: 4;
+        }
+        
+        #toss-result-container img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        #final-result-text {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            text-align: center;
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        #continue-button {
+            display: none;
+            padding: 15px 30px;
+            font-size: 1.5em;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s ease;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        /* ---- Pantalla de animaci�n de penaltis (estadio en movimiento) ---- */
+        #penalty-animation-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            display: none;
+        }
+        #penalty-animation-container {
+            position: absolute;
+            width: 100%;
+            /* La altura ser� establecida por JS */
+            height: 100%; 
+            background-image: url('images/estadio.png');
+            background-size: 100% auto;
+            /* Anclamos el fondo a la parte inferior para que la porter�a est� siempre en el sitio final */
+            background-position: center bottom; 
+            background-repeat: no-repeat;
+            /* La animaci�n de scroll se har� moviendo la imagen desde el cielo hasta la porter�a */
+            transition: transform 2s ease-in-out;
+            /* Posici�n inicial forzada. Se ajusta con JS */
+            transform: translateY(0);
+        }
+
+        /* ---- Pantalla de juego de penaltis (estadio fijo) ---- */
+        #penalty-game-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: none;
+            /* Usamos 'estadio_fondo.gif' */
+            background-image: url('images/estadio_fondo.gif'); 
+            background-size: cover;
+            /* *** CORRECCI�N CLAVE: Asegura que el gol est� siempre visible abajo *** */
+            background-position: center bottom;
+            background-repeat: no-repeat;
+            pointer-events: auto;
+        }
+
+        /* ----------------------------------------------------- */
+        /* --- ESTILOS DE PORTERO, BAL�N Y HITBOXES --- */
+        /* ----------------------------------------------------- */
+
+        #goalkeeper-image {
+            position: absolute;
+            /* Centrado Horizontal Perfecto */
+            left: 50%; 
+            top: 36%; 
+            height: 35%; 
+            
+            transform: translateX(-50%);
+            object-fit: contain;
+            display: none;
+            z-index: 5;
+            /* Asegurar que la imagen del portero no bloquee clics */
+            pointer-events: none; 
+        }
+        
+        #ball-image {
+            position: absolute;
+            top: 85%; 
+            height: 8%; 
+            left: 50%; 
+            transform: translateX(-50%);
+            object-fit: contain;
+            display: none;
+            /* CORRECCI�N CLAVE: Asegura que el bal�n est� por encima de todo, incluyendo el portero (5) y el hitbox (6) */
+            z-index: 7; 
+            transition: transform 0.5s ease-out, top 0.5s ease-out, height 0.5s ease-out;
+        }
+        
+        /* Contenedor de las zonas de click. Se superpone a la porter�a. */
+        #goal-hitbox {
+            position: absolute;
+            /* Coincide aproximadamente con la posici�n vertical del portero */
+            top: 35%; 
+            height: 55%; /* La altura de la porter�a hasta el suelo */
+            left: 50%;
+            /* El ancho de la porter�a es ~60% del ancho de la imagen */
+            width: 60%; 
+            transform: translateX(-50%);
+            z-index: 6; /* Debe estar por encima del portero */
+            /* SOLO para debug: border: 1px solid red; */
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr; /* Tres columnas */
+            grid-template-rows: 1fr; /* Una fila */
+            pointer-events: none; /* Desactivado por defecto. Se activa en JS */
+        }
+        
+        /* Estilos de las zonas (hitboxes) */
+        .goal-zone {
+            /* SOLO para debug: border: 1px solid rgba(255, 255, 255, 0.5); */
+            opacity: 0.8; /* Transparente por defecto */
+            transition: opacity 0.2s ease-in-out;
+            cursor: pointer;
+            pointer-events: auto; /* Permite clics dentro del contenedor */
+        }
+        
+        /* Efecto de iluminaci�n al pasar el rat�n */
+        .goal-zone:hover {
+            opacity: 0.1;
+            background-color: transparent;
+        }
+        
+        /* Estilos para las animaciones de movimiento del bal�n */
+        
+        /* Animaci�n para el arco y reducci�n de tama�o */
+        /* Nota: La animaci�n real se genera din�micamente en JS */
+        @keyframes shot-animation {
+            0% { 
+                transform: translateX(-50%) translateY(0); 
+                height: 8%; 
+                top: 85%;
+            }
+            100% {
+                /* Se sobrescribe por JS */
+                transform: translateX(-50%) translateY(0);
+                height: 4%;
+                top: 45%; 
+            }
+        }
+        
+        /* Clase para aplicar la animaci�n */
+        .is-shooting {
+            animation: shot-animation 0.7s cubic-bezier(0.4, 0.0, 0.6, 1.0) forwards;
+        }
+
+        /* ---- Feedback de resultado (NUEVO) ---- */
+        #game-feedback-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4em;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 4px 4px 6px rgba(0, 0, 0, 0.9);
+            z-index: 10;
+            display: none;
+            animation: bounceIn 0.5s ease-out;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            80% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* ---- Pantalla de transici�n de turno (NUEVO) ---- */
+        #turn-transition-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            display: none; 
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 9;
+        }
+        #transition-text {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        #score-text {
+            font-size: 1.5em;
+            color: #fff;
+        }
+
+        /* ---- Flash de transici�n ---- */
+        #flash-transition {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+            z-index: 99;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        /* Oculta las im�genes auxiliares para que no interfieran */
+        #penalty-image-loader {
+            display: none;
+        }
+        #fondo-image-loader {
+            display: none;
+        }
+
+        /* MEDIA QUERIES PARA ADAPTABILIDAD EN M�VILES */
+        @media (max-width: 768px) {
+            
+            /* Pantalla de inicio - Mensaje de rotaci�n */
+            #start-screen {
+                justify-content: flex-start;
+                padding-top: 10%;
+            }
+            #rotation-message {
+                display: block; 
+            }
+            #start-screen h1, #start-screen button {
+                display: none; 
+            }
+
+            /* Pantalla de intro - Logo m�s peque�o */
+            #logo {
+                width: 70%;
+            }
+
+            /* Pantalla de Di�logo - Layout en columna */
+            #dialogue-screen {
+                justify-content: center;
+                align-items: center;
+                padding: 10px;
+            }
+
+            #dialogue-wrapper {
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                height: auto;
+                padding: 10px;
+            }
+            
+            #saul-image {
+                align-self: center;
+                margin-bottom: 10px;
+                max-height: 50vh;
+            }
+
+            #dialogue-content {
+                width: 95%; 
+                padding-left: 0;
+            }
+            
+            #dialogue-content p {
+                font-size: 0.9em; 
+                line-height: 1.4;
+                margin-bottom: 15px;
+            }
+
+            #dorsal-buttons {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 5px;
+                max-width: 100%; 
+            }
+
+            #confirmation-container {
+                margin-top: 10px;
+            }
+
+            /* Pantalla de la Moneda - Layout en columna */
+            #coin-toss-screen {
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                padding-bottom: 0;
+            }
+            
+            #referee-and-content-container {
+                flex-direction: column;
+                width: 90%;
+            }
+
+            #referee-image {
+                align-self: center;
+                margin-bottom: 20px;
+                max-height: 60vh;
+            }
+
+            #referee-content {
+                width: 100%;
+                padding-bottom: 0;
+            }
+
+            #initial-referee-dialogue {
+                width: 100%;
+                margin-bottom: 20px;
+                padding: 15px;
+                background-color: rgba(255, 255, 255, 0.5);
+                border-radius: 10px;
+                color: #000;
+                font-size: 1em; 
+            }
+
+            #coin-buttons {
+                position: static;
+                transform: none;
+                margin-top: 20px;
+            }
+
+            #coin-buttons img {
+                max-width: 100px;
+            }
+
+            /* Tama�o de la animaci�n de lanzamiento */
+            #toss-animation-container {
+                width: 200px;
+                height: 200px;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                right: auto;
+                bottom: auto;
+            }
+            
+            #toss-result-container {
+                width: 150px;
+                height: 150px;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                right: auto;
+                bottom: auto;
+            }
+            
+            #final-result-text {
+                font-size: 1.5em;
+            }
+            
+            /* **Ajustes espec�ficos para el juego en m�vil** */
+            #goalkeeper-image {
+                top: 55%; 
+                height: 30%;
+            }
+            #ball-image {
+                top: 83%; 
+                height: 8%;
+            }
+            #game-feedback-text {
+                font-size: 2.5em;
+            }
+
+            #transition-text {
+                font-size: 1.5em;
+            }
+            #score-text {
+                font-size: 1em;
+            }
+        }
+        /* Muestra el mensaje de rotaci�n solo en orientaci�n vertical y m�vil */
+        @media (orientation: portrait) and (max-width: 768px) {
+            #rotation-message {
+                display: block;
+            }
+            #start-screen h1, #start-screen button {
+                display: none;
+            }
+        }
+        /* Oculta el mensaje de rotaci�n si la pantalla es horizontal */
+        @media (orientation: landscape) {
+            #rotation-message {
+                display: none;
+            }
+            #start-screen h1, #start-screen button {
+                display: block;
+            }
+            /* Ajuste espec�fico para el logo en paisaje */
+            #intro-container #logo {
+                width: 30%;
+                max-width: 300px;
+            }
+        }
+    
+/* ===== MINIMAL OVERRIDES: Centrar sólo la pantalla de elección de moneda (no tocar nada más) ===== */
+#coin-toss-screen {
+    align-items: center !important;
+    padding-top: 18px !important;
+    padding-bottom: 18px !important;
+}
+
+/* Alinea el contenedor interno (árbitro + contenido) verticalmente y evita que ocupe todo el alto */
+#referee-and-content-container {
+    align-items: center !important;
+    height: auto !important;
+    gap: 22px !important;
+}
+
+/* Evita que la imagen del árbitro ocupe demasiado en pantallas altas y céntrala */
+#referee-image {
+    align-self: center !important;
+    max-height: 70vh !important;
+    width: auto !important;
+    margin-bottom: 0 !important;
+}
+
+/* Centro estricto del contenido textual */
+#referee-content {
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+    padding-bottom: 8px !important;
+}
+
+/* Diálogo: centrar el texto vertical y horizontalmente, límite de alto y scroll si hace falta */
+#initial-referee-dialogue {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 12px !important;
+    background-color: rgba(255,255,255,0.92) !important;
+    color: #000 !important;
+    border-radius: 8px !important;
+    max-width: 760px !important;
+    max-height: 40vh !important;
+    overflow: auto !important;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2) !important;
+}
+
+/* Botones (monedas): centrados y adaptativos */
+#coin-buttons {
+    justify-content: center !important;
+    width: 100% !important;
+    margin-top: 14px !important;
+}
+
+#coin-buttons img {
+    width: 140px !important;
+    max-width: 32% !important;
+    height: auto !important;
+    cursor: pointer !important;
+    border-radius: 8px !important;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.35) !important;
+    transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+}
+
+#coin-buttons img:hover {
+    transform: translateY(-6px) scale(1.03) !important;
+    box-shadow: 0 10px 22px rgba(0,0,0,0.45) !important;
+}
+
+/* Aseguramos que los contenedores absolutos no se descolocan */
+#toss-result-container, #toss-animation-container, #final-result-text, #continue-button {
+    /* mantenemos el comportamiento original, pero los forzamos a centrar correctamente si hubiera conflicto */
+    left: 50% !important;
+    transform: translateX(-50%) translateY(0) !important;
+}
+
+/* Móvil: pequeñas correcciones para que siga respondiendo igual que ahora */
+@media (max-width: 768px) {
+    #referee-and-content-container { flex-direction: column !important; gap: 12px !important; }
+    #referee-image { max-height: 36vh !important; }
+    #initial-referee-dialogue { background-color: rgba(255,255,255,0.96) !important; max-height: none !important; }
+    #coin-buttons img { width: 120px !important; max-width: 45% !important; }
+}
+
+</style>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <div id="loading-text">Cargando...</div>
+    </div>
+
+    <div id="start-screen">
+        <h1>&iexcl;Ya est&aacute; el p&uacute;blico en el campo!</h1>
+        <button id="ready-button">&iquest;Est&aacute;s listo?</button> 
+        <div id="rotation-message">
+            <p>Para una mejor experiencia, gira tu dispositivo</p>
+            <div id="rotation-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-screen-share-off">
+                    <path d="M13 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/>
+                    <path d="M7 17v5"/>
+                    <path d="M17 17v5"/>
+                    <path d="M17 5v-2"/>
+                    <path d="M17 21v-2"/>
+                    <path d="M10 21h-2a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2"/>
+                    <path d="m14 17-5-5"/>
+                    <path d="m14 11-5-5"/>
+                    <line x1="14" y1="11" x2="14" y2="11"/>
+                    <line x1="9" y1="6" x2="9" y2="6"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div id="intro-container">
+        <img id="logo" src="images/logo_transp.png" alt="Liga LAGARTIJA Logo">
+        <button id="intro-continue-button">EMPEZAR</button>
+    </div>
+    
+    <div id="instructions-screen">
+        <div id="instructions-content-wrapper">
+            <div id="pizarra-imagen-container">
+                <img src="images/pizarra.png" alt="Pizarra de instrucciones">
+            </div>
+            <div id="pizarra-text">
+                <h3>Mec&aacute;nica de Juego</h3>
+                <p>El juego se juega por turnos.</p>
+                <h3>Tu turno (Atacando - BC)</h3>
+                <ul>
+                    <li>Elige tu disparo: La porter&iacute;a tiene 3 zonas imaginarias: izquierda, centro y derecha. Pincha en la que prefieras.</li>
+                    <li>La m&aacute;quina decide: El portero rival saltar&aacute; aleatoriamente a una de las tres zonas.</li>
+                </ul>
+                <h3>Turno de la m&aacute;quina (Defendiendo - BC)</h3>
+                <ul>
+                    <li>Elige tu parada: Pincha en una de las tres zonas imaginarias de la porter&iacute;a para que tu portero salte a pararla.</li>
+                    <li>La m&aacute;quina chuta: La m&aacute;quina elegir&aacute; una de las tres zonas para lanzar su tiro (RM).</li>
+                </ul>
+                <h3>Reglas de la Partida</h3>
+                <ul>
+                    <li>Se juegan 6 tiros en total; 3 por cada jugador.</li>
+                    <li>Si hay un empate, se pasar&aacute; a la "muerte subita":
+                        <ul>
+                            <li>Ambos jugadores tiran una vez.</li>
+                            <li>Si uno marca y el otro falla, el que marca gana inmediatamente.</li>
+                            <li>Si ambos marcan o ambos fallan, el juego contin&uacute;a hasta que uno gane.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <button id="pizarra-continue-button">Continuar</button>
+    </div>
+
+    <div id="dialogue-screen">
+        <div id="dialogue-wrapper">
+            <img id="saul-image" src="images/barca/saul_frontal.png" alt="Sa&uacute;l">
+            <div id="dialogue-content">
+                <p id="saul-dialogue-text">&iexcl;Hola, soy Sa&uacute;l!. Ay&uacute;dame a ganar al Real Madrid en la Liga Lagartija. Yo har&eacute; la vez de jugador lanzador y de portero en el FC Barcelona. Ahora, dime qu&eacute; dorsal te gustar&iacute;a que tuviese.</p>
+                <div id="dorsal-buttons"></div>
+                <div id="confirmation-container">
+                    <p>&iquest;Est&aacute;s conforme?</p>
+                    <div id="confirmation-buttons">
+                        <button id="confirm-yes">SI, adelante</button>
+                        <button id="confirm-no">NO, quiero otro</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="coin-toss-screen">
+        <div id="referee-and-content-container">
+            <img id="referee-image" src="images/arbitro_solo.png" alt="&Aacute;rbitro">
+            <div id="referee-content">
+                <div id="initial-referee-dialogue">
+                    <p>Hola soy Antonio "El gordo", amigo de Javi. Voy a ser el &aacute;rbitro de la sesi&oacute;n de penaltis de la Liga Lagartija. Vamos a decidir qui&eacute;n chuta primero. Selecciona qu&eacute; lado de la moneda eliges, CARA o CRUZ, pulsando en las monedas.</p>
+                </div>
+                <div id="coin-buttons">
+                    <img id="coin-cara-button" src="images/mon_cara.png" alt="Cara">
+                    <img id="coin-cruz-button" src="images/mon_cruz.png" alt="Cruz">
+                </div>
+            </div>
+        </div>
+		
+        <div id="toss-animation-container">
+            <img id="toss-animation-image" src="images/lanza.png" alt="Lanzando moneda">
+        </div>
+        <div id="toss-result-container">
+            <img id="toss-result-image" src="" alt="Resultado del lanzamiento">
+        </div>
+        <div id="final-result-text"></div>
+        <button id="continue-button">Continuar</button>
+    </div>
+
+    <div id="penalty-animation-screen">
+        <div id="penalty-animation-container"></div>
+    </div>
+    
+    <div id="penalty-game-screen">
+        
+        <div id="goal-hitbox">
+            <div class="goal-zone" data-zone="izquierda"></div>
+            <div class="goal-zone" data-zone="centro"></div>
+            <div class="goal-zone" data-zone="derecha"></div>
+        </div>
+
+        <img id="goalkeeper-image" src="" alt="Portero">
+        <img id="ball-image" src="" alt="Balon">
+
+        <div id="game-feedback-text"></div>
+
+        <div id="turn-transition-screen">
+            <div id="transition-text"></div>
+            <div id="score-text"></div>
+        </div>
+    </div>
+    
+    <div id="flash-transition"></div>
+
+    <div id="transition-door-left"></div>
+    <div id="transition-door-right"></div>
+
+    <audio id="audio-track1" src="sonido/001.mp3" loop></audio>
+    <audio id="audio-track2" src="sonido/002-nombre_dorsal.mp3" loop></audio>
+    <audio id="audio-track3" src="sonido/003-ingame2.mp3" loop></audio>
+	<audio id="audio-gol" src="sonido/penalti_gol.mp3"></audio>
+	<audio id="audio-fallo" src="sonido/penalti_fallo.mp3"></audio>
+	<audio id="sonidoCampeones" src="sonido/004-campeones.mp3" preload="auto"></audio>
+	<audio id="sonidoDerrota" src="sonido/005-derrota.mp3" preload="auto"></audio>
+
+    <img id="penalty-image-loader" src="images/estadio.png">
+    <img id="fondo-image-loader" src="images/estadio_fondo.gif">
+    
+    <img id="ball-spinning-loader" src="images/balon_girando.gif" style="display: none;">
+
+    <script>
+        // REFERENCIAS DE ELEMENTOS Y VARIABLES DE ESTADO
+        const loadingScreen = document.getElementById('loading-screen');
+        const startScreen = document.getElementById('start-screen');
+        const readyButton = document.getElementById('ready-button');
+        const introContainer = document.getElementById('intro-container');
+        const introContinueButton = document.getElementById('intro-continue-button');
+        const instructionsScreen = document.getElementById('instructions-screen');
+        const pizarraContinueButton = document.getElementById('pizarra-continue-button');
+        const dialogueScreen = document.getElementById('dialogue-screen');
+        const coinTossScreen = document.getElementById('coin-toss-screen');
+        const penaltyAnimationScreen = document.getElementById('penalty-animation-screen');
+        const penaltyAnimationContainer = document.getElementById('penalty-animation-container');
+        const penaltyGameScreen = document.getElementById('penalty-game-screen');
+        const flashTransition = document.getElementById('flash-transition');
+        const turnTransitionScreen = document.getElementById('turn-transition-screen');
+
+        const saulImage = document.getElementById('saul-image');
+        const dorsalButtonsContainer = document.getElementById('dorsal-buttons');
+        const confirmationContainer = document.getElementById('confirmation-container');
+        const confirmYesButton = document.getElementById('confirm-yes');
+        const confirmNoButton = document.getElementById('confirm-no');
+        const dialogueText = document.getElementById('saul-dialogue-text');
+
+        const coinCaraButton = document.getElementById('coin-cara-button');
+        const coinCruzButton = document.getElementById('coin-cruz-button');
+        const tossAnimationContainer = document.getElementById('toss-animation-container');
+        const tossResultContainer = document.getElementById('toss-result-container');
+        const tossResultImage = document.getElementById('toss-result-image');
+        const finalResultText = document.getElementById('final-result-text');
+        const continueButton = document.getElementById('continue-button');
+        const coinButtons = document.getElementById('coin-buttons');
+        const initialRefereeDialogue = document.getElementById('initial-referee-dialogue'); 
+        const rotationMessage = document.getElementById('rotation-message'); 
+
+        const goalkeeperImage = document.getElementById('goalkeeper-image');
+        const ballImage = document.getElementById('ball-image');
+        const goalHitbox = document.getElementById('goal-hitbox');
+        const goalZones = document.querySelectorAll('.goal-zone');
+        const gameFeedbackText = document.getElementById('game-feedback-text'); 
+
+        const doorLeft = document.getElementById('transition-door-left');
+        const doorRight = document.getElementById('transition-door-right');
+
+        const audioTrack1 = document.getElementById('audio-track1');
+        const audioTrack2 = document.getElementById('audio-track2');
+        const audioTrack3 = document.getElementById('audio-track3');
+		const audioGol = document.getElementById('audio-gol');
+		const audioFallo = document.getElementById('audio-fallo');
+
+// Forzar volumen de efectos al 50%
+if (audioGol) { try { audioGol.volume = 0.5; } catch(e) {} }
+if (audioFallo) { try { audioFallo.volume = 0.5; } catch(e) {} }
+
+        // VARIABLES DE ESTADO Y CONSTANTES
+        const baseVolume = 0.2;
+        audioTrack1.volume = 0;
+        audioTrack2.volume = 0;
+        audioTrack3.volume = 0;
+        let currentAudioTrack = null;
+        let flashInterval;
+        let startingTeam = ''; // bc o rm
+        let userChoice = '';
+        let isGameLocked = true; // Para evitar clics durante animaciones
+        
+        // ESTADO DEL JUEGO
+        let bcGoals = 0;
+        let rmGoals = 0;
+        let totalShots = 0; // Seis en total (3 BC, 3 RM)
+        let currentShooter = ''; // 'bc' o 'rm'
+
+        // CONSTANTES DE NOMBRES DE EQUIPO
+        const TEAM_BC_FULL = 'FC Barcelona';
+        const TEAM_RM_FULL = 'Real Madrid';
+
+        function getTeamName(acronym) {
+            return acronym === 'bc' ? TEAM_BC_FULL : TEAM_RM_FULL;
+        }
+
+        // CONSTANTES DE POSICI�N FIJAS PARA PORTERO
+        const GK_TOP_FULLSCREEN = '33%'; 
+        const GK_TOP_NORMAL = '36%';     
+
+        // Constantes para el c�lculo de altura de imagen
+        const ORIGINAL_IMAGE_WIDTH = 1024;
+        const ORIGINAL_IMAGE_HEIGHT = 1435;
+        const ASPECT_RATIO = ORIGINAL_IMAGE_HEIGHT / ORIGINAL_IMAGE_WIDTH;
+
+        // Posiciones para el tiro y la caida del bal�n despu�s de parada
+        const zones = {
+            "izquierda": { top: 40, left: 35, endHeight: 4, saveTop: 75, saveLeft: 40 },
+            "centro": { top: 38, left: 50, endHeight: 3, saveTop: 75, saveLeft: 50 },
+            "derecha": { top: 40, left: 65, endHeight: 4, saveTop: 75, saveLeft: 60 }
+        };
+
+        // Lista de URLs de im�genes para precargar
+        const imagesToPreload = [
+            'images/vestuario.png',
+            'images/estadio_publico_animado.gif',
+            'images/logo_transp.png',
+            'images/pizarra.png',
+            'images/vestuario2.png',
+            'images/barca/saul_frontal.png',
+            'images/cesped.png',
+            'images/arbitro_solo.png',
+            'images/mon_cara.png',
+            'images/mon_cruz.png',
+            'images/sel_cara.png',
+            'images/sel_cruz.png',
+            'images/estadio_fondo.gif',
+            'images/estadio.png',
+            'images/bc_parado.gif',
+            'images/rm_parado.gif',
+            'images/balon_parado.png',
+            'images/balon_girando.gif',
+            'images/porteria.png' // <-- IMAGEN DE PORTER�A VAC�A
+        ];
+
+        // Se mantiene la l�gica de precarga
+        for (let i = 1; i <= 25; i++) {
+            imagesToPreload.push(`images/barca/dorsal/saul_anim_${i}.gif`);
+        }
+        const zonesFileNames = ['izq', 'centro', 'der']; 
+        const teamsArray = ['bc', 'rm'];
+        const outcomesArray = ['acierto', 'fallo'];
+        teamsArray.forEach(team => {
+            zonesFileNames.forEach(zone => {
+                outcomesArray.forEach(outcome => {
+                    imagesToPreload.push(`images/${team}/${team}_${zone}_${outcome}.gif`);
+                });
+            });
+        });
+
+        // Funci�n para precargar im�genes
+        function preloadImages() {
+            let loadedCount = 0;
+            const totalImages = imagesToPreload.length;
+
+            return new Promise((resolve, reject) => {
+                if (totalImages === 0) {
+                    resolve();
+                    return;
+                }
+
+                imagesToPreload.forEach(url => {
+                    const img = new Image();
+                    img.onload = () => {
+                        loadedCount++;
+                        if (loadedCount === totalImages) {
+                            resolve();
+                        }
+                    };
+                    img.onerror = () => {
+                        console.error('Error al cargar la imagen:', url);
+                        loadedCount++;
+                        if (loadedCount === totalImages) {
+                            resolve();
+                        }
+                    };
+                    img.src = url;
+                });
+            });
+        }
+        
+        // Genera los 25 botones de dorsal
+        for (let i = 1; i <= 25; i++) {
+            const button = document.createElement('button');
+            button.className = 'dorsal-button';
+            button.textContent = i;
+            button.dataset.dorsal = i;
+            dorsalButtonsContainer.appendChild(button);
+        }
+
+        // Funciones de Audio y Animaci�n (sin cambios)
+        function generateFlash() {
+            const flash = document.createElement('div');
+            flash.classList.add('flash-effect');
+            const containerRect = introContainer.getBoundingClientRect();
+            const containerWidth = containerRect.width;
+            const containerHeight = containerRect.height;
+            const topGradaYMin = containerHeight * 0.15;
+            const topGradaYMax = containerHeight * 0.30;
+            const bottomGradaYMin = containerHeight * 0.35;
+            const bottomGradaYMax = containerHeight * 0.60;
+            const randomX = Math.random() * containerWidth;
+            let randomY;
+            if (Math.random() < 0.5) {
+                randomY = topGradaYMin + Math.random() * (topGradaYMax - topGradaYMin);
+            } else {
+                randomY = bottomGradaYMin + Math.random() * (bottomGradaYMax - bottomGradaYMin);
+            }
+            const flashSize = 20 + Math.random() * 30;
+            flash.style.width = `${flashSize}px`;
+            flash.style.height = `${flashSize}px`;
+            flash.style.left = `${randomX - flashSize / 2}px`;
+            flash.style.top = `${randomY - flashSize / 2}px`;
+            introContainer.appendChild(flash);
+        }
+
+        function startFlashEffect() {
+            flashInterval = setInterval(() => {
+                const randomDelay = 200 + Math.random() * 800;
+                setTimeout(generateFlash, randomDelay);
+            }, 500);
+        }
+
+        function fadeInAudio(audioElement, finalVolume, duration = 1000) {
+            audioElement.play().catch(e => console.log("Audio play failed:", e)); 
+            const step = finalVolume / (duration / 50);
+            let currentVolume = audioElement.volume;
+            const fadeInterval = setInterval(() => {
+                currentVolume += step;
+                if (currentVolume >= finalVolume) {
+                    audioElement.volume = finalVolume;
+                    clearInterval(fadeInterval);
+                } else {
+                    audioElement.volume = currentVolume;
+                }
+            }, 50);
+        }
+
+        function fadeOutAudio(audioElement, duration = 1000) {
+            const step = audioElement.volume / (duration / 50);
+            let currentVolume = audioElement.volume;
+            const fadeInterval = setInterval(() => {
+                currentVolume -= step;
+                if (currentVolume <= 0) {
+                    audioElement.volume = 0;
+                    audioElement.pause();
+                    clearInterval(fadeInterval);
+                } else {
+                    audioElement.volume = currentVolume;
+                }
+            }, 50);
+        }
+        
+		// Fade a volumen objetivo en pasos (devuelve promesa)
+function fadeToVolume(audioEl, targetVolume, duration = 300) {
+    return new Promise((resolve) => {
+        if (!audioEl) { resolve(); return; }
+        targetVolume = Math.max(0, Math.min(1, targetVolume));
+        const steps = Math.max(1, Math.round(duration / 50));
+        const step = (targetVolume - audioEl.volume) / steps;
+        let current = 0;
+        const iv = setInterval(() => {
+            current++;
+            audioEl.volume = Math.max(0, Math.min(1, audioEl.volume + step));
+            if (current >= steps) {
+                clearInterval(iv);
+                audioEl.volume = targetVolume;
+                resolve();
+            }
+        }, 50);
+    });
+}
+
+	// Contador para sonidos solapados
+	let _duckCount = 0;
+
+	// Funci�n que reproduce un audio de efecto reduciendo la m�sica y restaurando despu�s
+	async function playEffectWithDuck(effectAudio, duckVolume = 0.05, duckDuration = 150, restoreDuration = 300) {
+    if (!effectAudio) return;
+    // Si hay m�sica actual, primero duckearla (solo en la primera petici�n)
+    try {
+        if (currentAudioTrack && _duckCount === 0) {
+            // guardamos el volumen real en caso de que quieras usarlo (baseVolume existe en tu c�digo)
+            await fadeToVolume(currentAudioTrack, duckVolume, duckDuration);
+        }
+        _duckCount++;
+
+        // reproducir el efecto desde el inicio
+        try { effectAudio.currentTime = 0; } catch (e) {}
+        await effectAudio.play().catch(e => { /* autoplay bloqueado u otro */ });
+
+        // cuando termine el efecto, restauramos (si no quedan otros efectos activos)
+        const restore = async () => {
+            _duckCount = Math.max(0, _duckCount - 1);
+            if (_duckCount === 0 && currentAudioTrack) {
+                await fadeToVolume(currentAudioTrack, baseVolume, restoreDuration);
+            }
+            effectAudio.removeEventListener('ended', restore);
+        };
+        effectAudio.addEventListener('ended', restore);
+    } catch (e) {
+        // fallback: intentar reproducir sin duck si algo falla
+        try { effectAudio.play().catch(()=>{}); } catch(e2){}
+		}
+	}
+
+		
+        // Funci�n para ajustar la posici�n del portero (mantener)
+        function adjustGoalkeeperForFullscreen() {
+            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+            if (window.innerWidth <= 768) return; 
+
+            if (isFullscreen) {
+                goalkeeperImage.style.top = GK_TOP_FULLSCREEN; // 33%
+            } else {
+                goalkeeperImage.style.top = GK_TOP_NORMAL; // 36%
+            }
+        }
+
+        // L�gica para el mensaje de rotaci�n
+        function checkOrientation() {
+            const isMobile = window.innerWidth <= 768;
+            const isPortrait = window.innerHeight > window.innerWidth;
+            if (isMobile && isPortrait) {
+                startScreen.style.backgroundImage = 'none';
+                rotationMessage.style.display = 'block';
+                document.body.style.backgroundColor = '#000';
+            } else {
+                startScreen.style.backgroundImage = 'url("images/vestuario.png")';
+                rotationMessage.style.display = 'none';
+                document.body.style.backgroundColor = 'transparent';
+            }
+        }
+        
+        // FUNCI�N CLAVE: Establece la altura correcta y la posici�n INICIAL (cielo visible)
+        
+	// Reemplaza la funci�n handlePenaltyScreenScroll existente por esta:
+function handlePenaltyScreenScroll() {
+    const viewportHeight = window.innerHeight;
+    const containerWidth = penaltyAnimationContainer.clientWidth;
+
+    // Intentamos leer dimensiones naturales de la imagen si est� disponible
+    const img = document.getElementById('penalty-image-loader');
+    const naturalWidth = (img && img.naturalWidth) ? img.naturalWidth : ORIGINAL_IMAGE_WIDTH;
+    const naturalHeight = (img && img.naturalHeight) ? img.naturalHeight : ORIGINAL_IMAGE_HEIGHT;
+    const imgAspect = naturalHeight / naturalWidth;
+
+    // Altura si la imagen se ajusta al ancho del contenedor
+    const renderedHeight = Math.round(containerWidth * imgAspect);
+
+    if (renderedHeight <= viewportHeight) {
+        // Si la imagen ajustada al ancho ser�a m�s peque�a que la pantalla,
+        // forzamos que la imagen ocupe la altura del viewport para evitar hueco negro.
+        penaltyAnimationContainer.style.backgroundSize = 'auto 100%'; // altura = 100%
+        penaltyAnimationContainer.style.height = `${viewportHeight}px`;
+        penaltyAnimationContainer.dataset.scrollOffset = 0;
+        // mostrar inicialmente la parte superior (cielo)
+        penaltyAnimationContainer.style.transition = 'none';
+        penaltyAnimationContainer.style.transform = `translateY(0px)`;
+    } else {
+        // Si la imagen renderizada es m�s alta que el viewport, usamos background-size por ancho
+        penaltyAnimationContainer.style.backgroundSize = '100% auto';
+        penaltyAnimationContainer.style.height = `${renderedHeight}px`;
+        const scrollOffset = Math.max(0, renderedHeight - viewportHeight);
+        penaltyAnimationContainer.dataset.scrollOffset = scrollOffset;
+        // mostrar inicialmente la parte superior (cielo)
+        penaltyAnimationContainer.style.transition = 'none';
+        penaltyAnimationContainer.style.transform = `translateY(0px)`;
+    }
+}
+
+// Reemplaza la funci�n startPenaltyScrollAnimation existente por esta:
+function startPenaltyScrollAnimation() {
+    const scrollOffset = parseInt(penaltyAnimationContainer.dataset.scrollOffset || '0', 10);
+
+    if (scrollOffset > 0) {
+        // Peque�a espera para forzar layout y luego animamos hacia arriba (valor negativo)
+        setTimeout(() => {
+            penaltyAnimationContainer.style.transition = 'transform 2s ease-in-out';
+            // mover hacia arriba para que la parte inferior quede visible
+            penaltyAnimationContainer.style.transform = `translateY(-${scrollOffset}px)`;
+        }, 50);
+    } else {
+        // Si no hay offset (imagen ocupa la pantalla), aseguramos transform en 0
+        penaltyAnimationContainer.style.transition = 'none';
+        penaltyAnimationContainer.style.transform = 'translateY(0px)';
+    }
+}
+	
+
+        // L�GICA DEL JUEGO
+        
+        function lockGame(lock) {
+            isGameLocked = lock;
+            // Bloquea/desbloquea el contenedor principal de hitboxes
+            goalHitbox.style.pointerEvents = lock ? 'none' : 'grid';
+        }
+        
+        // FUNCI�N AUXILIAR PARA MAPEAR NOMBRES DE ARCHIVO
+        function getGoalkeeperActionZone(codeZone) {
+            if (codeZone === 'izquierda') return 'izq';
+            if (codeZone === 'derecha') return 'der';
+            return codeZone; 
+        }
+
+        // --- FUNCIONES DE TURNO ---
+
+        function startGameTurn() {
+            // Limpiar feedback de jugada anterior
+            gameFeedbackText.style.display = 'none';
+
+            // Determinar qu� fase del juego comienza (el usuario siempre es BC)
+            // Ya no hay un l�mite duro aqu�. El l�mite lo gestiona handleGameEnd
+            
+            if (currentShooter === 'bc') {
+                startShotTurn(); // El usuario chuta (BC)
+            } else {
+                startSaveTurn(); // El usuario para (BC)
+            }
+        }
+
+        function startShotTurn() {
+            // Es el turno del Barcelona (usuario) de chutar. El portero es RM.
+            
+            // Asegurarse de que el bal�n est� en posici�n de tiro
+            ballImage.style.top = '85%';
+            ballImage.style.height = '8%';
+            ballImage.style.left = '50%';
+            ballImage.style.transform = 'translateX(-50%)';
+            ballImage.src = 'images/balon_parado.png';
+            ballImage.style.display = 'block';
+            ballImage.style.animation = 'none'; // Limpiar animaciones previas
+
+            // El portero del equipo rival (RM) est� parado
+            goalkeeperImage.src = 'images/rm_parado.gif';
+            goalkeeperImage.style.display = 'block'; 
+            
+            // Desbloquear la interfaz para que el usuario pueda chutar
+            lockGame(false); 
+        }
+
+        function startSaveTurn() {
+            // Es el turno del Real Madrid de chutar. El usuario para con BC.
+            
+            // Asegurarse de que el bal�n est� en posici�n de tiro
+            ballImage.style.top = '85%';
+            ballImage.style.height = '8%';
+            ballImage.style.left = '50%';
+            ballImage.style.transform = 'translateX(-50%)';
+            ballImage.src = 'images/balon_parado.png';
+            ballImage.style.display = 'block';
+            ballImage.style.animation = 'none'; // Limpiar animaciones previas
+
+            // El portero del equipo propio (BC) est� parado
+            goalkeeperImage.src = 'images/bc_parado.gif';
+            goalkeeperImage.style.display = 'block'; 
+            
+            // Desbloquear la interfaz para que el usuario pueda elegir a d�nde tirarse
+            lockGame(false); 
+        }
+        
+        // FUNCI�N CLAVE: Gestiona el final del juego (CORREGIDA PARA MUERTE S�BITA)
+        
+function handleGameEnd() {
+    let finalMessage = '';
+    const isEndOfSuddenDeathRound = totalShots > 6 && totalShots % 2 === 0;
+
+    // Check for definitive win (at end of regulation OR end of SD round)
+    const isDefinitiveWin = (bcGoals !== rmGoals && (totalShots === 6 || isEndOfSuddenDeathRound));
+    if (isDefinitiveWin) {
+const winnerTeamName = bcGoals > rmGoals ? TEAM_BC_FULL : TEAM_RM_FULL;
+        finalMessage = `&iexcl;FINAL!<br>Ganador:<br>${winnerTeamName} (${bcGoals} - ${rmGoals})`;
+
+        // Lock the game to prevent further clicks
+        isGameLocked = true;
+        // Show final transition screen
+        document.getElementById('transition-text').innerHTML = finalMessage;
+       // document.getElementById('score-text').textContent = `Resultado final: ${getTeamName('bc')}: ${bcGoals} | ${getTeamName('rm')}: ${rmGoals}`;
+
+        // Play final fanfare if available
+        try {
+            if (typeof audioFinalFanfare !== 'undefined' && audioFinalFanfare) {
+                audioFinalFanfare.currentTime = 0;
+                audioFinalFanfare.play().catch(()=>{});
+            }
+        } catch(e){}
+
+        // Ensure the transition screen is visible
+        turnTransitionScreen.style.display = 'flex';
+
+        // Add a restart button (if not present) to allow replay without reloading
+        if (!document.getElementById('restart-button')) {
+            const btn = document.createElement('button');
+            btn.id = 'restart-button';
+            btn.textContent = 'Reiniciar partido';
+            btn.style.marginTop = '12px';
+            btn.style.padding = '10px 16px';
+            btn.style.fontSize = '16px';
+            btn.style.cursor = 'pointer';
+            btn.addEventListener('click', () => {
+                // Simple restart: reload the page to reset state
+                location.reload();
+            });
+            // Append after score-text
+            const cont = document.getElementById('turn-transition-screen') || turnTransitionScreen || document.body;
+            // try to find a sensible container inside the transition screen
+            const scoreElem = document.getElementById('score-text');
+            if (scoreElem && scoreElem.parentNode) {
+                scoreElem.parentNode.appendChild(btn);
+            } else {
+                cont.appendChild(btn);
+            }
+        }
+
+        // Mostrar imagen final y reproducir audio correspondiente seg�n victoria/derrota del BC
+        try {
+            // Crear/usar elemento img en la pantalla de transici�n
+            let finalImg = document.getElementById('final-image-display');
+            if (!finalImg) {
+                finalImg = document.createElement('img');
+                finalImg.id = 'final-image-display';
+                finalImg.style.maxWidth = '80%';
+                finalImg.style.maxHeight = '60%';
+                finalImg.style.display = 'block';
+                finalImg.style.marginTop = '12px';
+                // insert after transition text
+                const transText = document.getElementById('transition-text');
+                if (transText && transText.parentNode) transText.parentNode.appendChild(finalImg);
+                else if (turnTransitionScreen) turnTransitionScreen.appendChild(finalImg);
+            }
+			
+			// --- COMIENZO DEL BLOQUE DE FINAL DE JUEGO ---
+
+// NUEVA PARTE: Detenemos la canci�n de fondo "003-ingame2.mp3"
+// Su ID en tu archivo es 'audio-track3'
+let ingameAudio = document.getElementById('audio-track3'); 
+if (ingameAudio) {
+    ingameAudio.pause();      // Pausa la reproducci�n
+    ingameAudio.currentTime = 0; // Rebobina para que al empezar de nuevo suene desde el inicio
+}
+
+
+// La l�gica que ya tienes (comprobaci�n de resultado y volumen al 50%)
+if (bcGoals > rmGoals) {
+    // Si GANAS (Campeones)
+    finalImg.src = 'images/final_bien.jpg';
+    
+    let campeonesAudio = document.getElementById('sonidoCampeones');
+    campeonesAudio.volume = 0.5; // Volumen al 50%
+    campeonesAudio.play();
+    
+} else {
+    // Si PIERDES (Derrota)
+    finalImg.src = 'images/final_mal.jpg';
+    
+    let derrotaAudio = document.getElementById('sonidoDerrota');
+    derrotaAudio.volume = 0.5; // Volumen al 50%
+    derrotaAudio.play();
+}
+
+// --- FIN DEL BLOQUE DE FINAL DE JUEGO ---
+			
+			
+// Seleccionar imagen y audio seg�n resultado
+if (bcGoals > rmGoals) {
+    finalImg.src = 'images/final_bien.jpg';
+    
+    let campeonesAudio = document.getElementById('sonidoCampeones');
+    campeonesAudio.volume = 0.5; // Establece el volumen al 50%
+    campeonesAudio.play();
+    
+} else {
+    finalImg.src = 'images/final_mal.jpg';
+    
+    let derrotaAudio = document.getElementById('sonidoDerrota');
+    derrotaAudio.volume = 0.5; // Establece el volumen al 50%
+    derrotaAudio.play();
+}
+            // Reproducir audio final
+            if (finalAudioSrc) {
+                try {
+                    const finalAudio = new Audio(finalAudioSrc);
+                    finalAudio.volume = 0.5;
+                    finalAudio.play().catch(e => console.warn('final audio play failed', e));
+                } catch(e) { console.warn('final audio creation/play error', e); }
+            }
+        } catch(e) {
+            console.warn('Error mostrando imagen/sonido final', e);
+        }
+
+        // Do NOT continue the game
+        return;
+    }
+
+    // If not definitive win, prepare message and continue (sudden death or less than 6 shots)
+    if (totalShots >= 6) {
+        finalMessage = `Muerte Subita: &iexcl;Contin&uacute;a el juego!`;
+    } else {
+        finalMessage = `Siguiente turno...`;
+    }
+
+    document.getElementById('transition-text').innerHTML = finalMessage;
+    const shotDisplay = totalShots < 6 ? `(Tiros: ${totalShots}/6)` : `(Muerte Subita)`; 
+    
+    // Hide transition and continue after delay
+    setTimeout(() => {
+        turnTransitionScreen.style.display = 'none';
+        startGameTurn(); 
+    }, 2000);
+}
+
+
+        // FUNCI�N CLAVE: Finaliza el turno y gestiona la transici�n (CORREGIDA PARA PORTERIA.PNG)
+        function endTurn() {
+            // totalShots es el n�mero de tiros que acaba de tomarse.
+            totalShots++;
+            
+            // 1. Ocultar bal�n y feedback
+            ballImage.style.display = 'none';
+            gameFeedbackText.style.display = 'none';
+
+            // **MODIFICACI�N SOLICITADA:** Cargar la imagen de la porter�a vac�a para el reseteo visual
+            goalkeeperImage.src = 'images/porteria.png';
+            goalkeeperImage.style.display = 'block'; // Aseguramos que se muestre, aunque la transici�n la cubra
+            
+            // 2. Alternar el tirador
+            // El siguiente tirador es el equipo opuesto al que acaba de terminar su turno.
+            currentShooter = currentShooter === 'bc' ? 'rm' : 'bc'; 
+            
+            // 3. Mostrar pantalla de transici�n
+            const nextTeamName = getTeamName(currentShooter);
+            const action = currentShooter === 'bc' ? 'CHUTAR' : 'PARAR'; 
+            
+            document.getElementById('transition-text').innerHTML = `Turno de ${nextTeamName}<br>Preparate a ${action.toUpperCase()}`;
+            // Muestra (Tiros: X/6) o (Muerte Subita)
+            const shotDisplay = totalShots < 6 ? `(Tiros: ${totalShots}/6)` : `(Muerte Subita)`; 
+            //document.getElementById('score-text').textContent = `${getTeamName('bc')}: ${bcGoals} | ${getTeamName('rm')}: ${rmGoals} ${shotDisplay}`;
+
+            // Mostrar la pantalla de transici�n
+            turnTransitionScreen.style.display = 'flex';
+            
+            // 4. Iniciar el siguiente turno (o terminar el juego)
+            if (totalShots >= 6) {
+                // Si ya pasamos de 6 tiros, handleGameEnd decide si parar (si hay ganador) o seguir (si hay empate).
+                handleGameEnd();
+            } else {
+                // Flujo normal (totalShots < 6)
+                setTimeout(() => {
+                    turnTransitionScreen.style.display = 'none';
+                    startGameTurn(); 
+                }, 2000);
+            }
+        }
+
+        // --- ANIMACI�N DEL BAL�N ---
+
+        // Simula la animaci�n del tiro del bal�n (Sin cambios)
+        function animateShot(zoneName, isGoal, isBallVisibleAfterShot) {
+            const target = zones[zoneName];
+            
+            // 1. Preparar el bal�n
+            ballImage.src = 'images/balon_girando.gif';
+            ballImage.classList.add('is-shooting');
+            ballImage.style.display = 'block';
+
+            // 2. Establecer keyframes din�micos
+            const styleSheet = document.styleSheets[0];
+            const keyframesRule = `@keyframes shot-animation {
+                0% { 
+                    transform: translateX(-50%) translateY(0); 
+                    height: 8%; 
+                    top: 85%;
+                }
+                50% { 
+                    /* Simular arco: mover arriba (55%) y a la mitad horizontal (target.left - 50) */
+                    transform: translateX(-50%) translateY(-20vh) translateX(${target.left - 50}vw); 
+                    height: 6%; 
+                    top: 55%; 
+                }
+                100% {
+                    /* El transform final se mueve a la posici�n de la porter�a (left) y se reduce (height) */
+                    top: ${target.top}%;
+                    left: ${target.left}%;
+                    height: ${target.endHeight}%;
+                    transform: translateX(-50%);
+                }
+            }`;
+            
+            // Eliminar regla anterior si existe
+            let existingRuleIndex = -1;
+            for (let i = 0; i < styleSheet.cssRules.length; i++) {
+                if (styleSheet.cssRules[i].name === 'shot-animation') {
+                    existingRuleIndex = i;
+                    break;
+                }
+            }
+            if (existingRuleIndex !== -1) {
+                styleSheet.deleteRule(existingRuleIndex);
+            }
+            styleSheet.insertRule(keyframesRule, styleSheet.cssRules.length);
+            
+            // 3. Aplicar la animaci�n
+            ballImage.style.animation = `shot-animation 0.7s cubic-bezier(0.4, 0.0, 0.6, 1.0) forwards`;
+            
+            // 4. Si es parada, el bal�n debe desaparecer a mitad del camino
+            if (!isBallVisibleAfterShot) { 
+                setTimeout(() => {
+                    ballImage.src = ''; 
+                    ballImage.style.display = 'none';
+                    // Esto evita el parpadeo en el listener de 'animationend'
+                    ballImage.style.animation = 'none'; 
+                    ballImage.classList.remove('is-shooting');
+                }, 400); 
+            }
+            
+            // 5. FIJAR LA POSICI�N FINAL DEL BAL�N SI ES GOL 
+            ballImage.addEventListener('animationend', function handler() {
+                ballImage.classList.remove('is-shooting');
+                ballImage.style.animation = 'none';
+                
+                if (isBallVisibleAfterShot) { // Si fue gol, fijar la posici�n final del keyframe
+                    ballImage.style.top = `${target.top}%`;
+                    ballImage.style.left = `${target.left}%`;
+                    ballImage.style.height = `${target.endHeight}%`;
+                }
+                
+                // Asegurarse de que el listener solo se ejecuta una vez
+                ballImage.removeEventListener('animationend', handler);
+            }, { once: true });
+        }
+
+
+        // --- HANDLERS DE JUGADA ---
+
+        // Simula el tiro y la animaci�n (USUARIO CHUTA BC) 
+        function handleShot(zone) {
+            if (isGameLocked || currentShooter !== 'bc') return; 
+            
+            lockGame(true); 
+            
+            // 1. Decisi�n de la m�quina (Parada del RM)
+            const zonesArray = ['izquierda', 'centro', 'derecha'];
+            const machineSave = zonesArray[Math.floor(Math.random() * zonesArray.length)];
+            
+            const isGoal = zone !== machineSave; // Gol si la zona de tiro es diferente a la de parada
+            
+            // 2. Cargar GIF del portero (RM)
+            const outcomeText = isGoal ? 'fallo' : 'acierto'; // Fallo para el portero si es gol
+            const fileZone = getGoalkeeperActionZone(machineSave); 
+            goalkeeperImage.src = `images/rm/rm_${fileZone}_${outcomeText}.gif`; 
+            
+            // 3. Animaci�n del Bal�n
+            // isBallVisibleAfterShot = isGoal 
+            animateShot(zone, isGoal, isGoal); 
+
+            // 4. L�gica de Fin de Jugada
+            setTimeout(() => {
+                
+                // 5. Mostrar feedback visual (GOL/PARADA) 
+                const feedbackMessage = isGoal ? '&iexcl;GOL!' : '&iexcl;PARADA!';
+                gameFeedbackText.textContent = feedbackMessage;
+                gameFeedbackText.style.color = isGoal ? '#4CAF50' : '#dc3545';
+                gameFeedbackText.style.display = 'block';
+
+                if (isGoal) {
+                    bcGoals++;
+
+// --- audio effect for BC (user) shots: ensure gol/fallo sounds play (improved) ---
+try {
+    console.log('BC audio snippet running: isGoal=', isGoal, 'audioGol=', !!audioGol, 'audioFallo=', !!audioFallo);
+    if (typeof isGoal !== 'undefined' && isGoal) {
+        try { 
+            playEffectWithDuck(audioGol).catch(e => console.warn('playEffectWithDuck audioGol rejected', e)); 
+        } catch(e){ 
+            console.warn('playEffectWithDuck(audioGol) failed:', e);
+            if (audioGol && typeof audioGol.play === 'function') { 
+                try { audioGol.muted = false; audioGol.currentTime = 0; audioGol.play().catch(err=>console.warn('audioGol.play failed',err)); } catch(e2) {}
+            }
+        }
+    } else {
+        try { 
+            playEffectWithDuck(audioFallo).catch(e => console.warn('playEffectWithDuck audioFallo rejected', e)); 
+        } catch(e){ 
+            console.warn('playEffectWithDuck(audioFallo) failed:', e);
+            if (audioFallo && typeof audioFallo.play === 'function') { 
+                try { audioFallo.muted = false; audioFallo.currentTime = 0; audioFallo.play().catch(err=>console.warn('audioFallo.play failed',err)); } catch(e2) {}
+            }
+        }
+    }
+} catch(err) {
+    console.warn('BC audio snippet unexpected error', err);
+}
+// --- end audio effect snippet ---
+
+
+ 
+                    ballImage.src = 'images/balon_parado.png'; 
+                } else {
+                    // L�GICA PARA PARADA (SAVE)
+                    const saveZone = zones[zone]; 
+                    ballImage.src = 'images/balon_parado.png'; 
+                    ballImage.style.top = `${saveZone.saveTop}%`;
+                    ballImage.style.left = `${saveZone.saveLeft}%`; 
+                    ballImage.style.height = '8%'; 
+                    ballImage.style.transform = 'translateX(-50%)';
+                    ballImage.style.animation = 'none';
+                    ballImage.style.display = 'block';
+                }
+                
+                // 6. Preparar el siguiente turno
+                endTurn();
+                
+            }, 1000); 
+        }
+
+        // Simula la parada y la animaci�n (USUARIO PARA BC) 
+        function handleSave(userSaveZone) {
+            if (isGameLocked || currentShooter !== 'rm') return; 
+            
+            lockGame(true); 
+            
+            // 1. Decisi�n de la m�quina (Shot del RM)
+            const zonesArray = ['izquierda', 'centro', 'derecha'];
+            const machineShot = zonesArray[Math.floor(Math.random() * zonesArray.length)];
+            
+            // Acierto (Parada) si la zona de tiro de la m�quina es igual a la de parada del usuario
+            const isSave = userSaveZone === machineShot; 
+            const isGoal = !isSave; // Gol del RM si no es parada
+            
+            // 2. Cargar GIF del portero (BC, el que el usuario controla)
+            const outcomeText = isSave ? 'acierto' : 'fallo'; // Acierto = Parada (no gol), Fallo = Gol
+            const fileZone = getGoalkeeperActionZone(userSaveZone); 
+            goalkeeperImage.src = `images/bc/bc_${fileZone}_${outcomeText}.gif`; 
+            
+            // 3. Animaci�n del Bal�n
+            // El bal�n va hacia la zona de 'machineShot'. Es visible si es gol del RM.
+            const isBallVisibleAfterShot = isGoal; 
+            animateShot(machineShot, isGoal, isBallVisibleAfterShot); 
+            
+            // 4. L�gica de Fin de Jugada
+            setTimeout(() => {
+                
+                // 5. Mostrar feedback visual (GOL/PARADA) 
+                const feedbackMessage = isSave ? '&iexcl;PARADA!' : `&iexcl;GOL ${TEAM_RM_FULL}!`;
+        gameFeedbackText.textContent = feedbackMessage;
+        gameFeedbackText.style.color = isSave ? '#4CAF50' : '#dc3545';
+        gameFeedbackText.style.display = 'block';
+
+        if (isGoal) {
+            rmGoals++; 
+            ballImage.src = 'images/balon_parado.png'; 
+            // reproducir sonido gol (m�quina)
+            try { playEffectWithDuck(audioGol); } catch(e) {}
+        } else {
+            // L�GICA PARA PARADA (SAVE) - Plasmar el bal�n en el LUGAR DE TIRO
+            const shotZone = zones[machineShot]; 
+            ballImage.src = 'images/balon_parado.png'; 
+            ballImage.style.top = `${shotZone.saveTop}%`;
+            ballImage.style.left = `${shotZone.saveLeft}%`; 
+            ballImage.style.height = '8%'; 
+            ballImage.style.transform = 'translateX(-50%)';
+            ballImage.style.animation = 'none';
+            ballImage.style.display = 'block';
+            // reproducir sonido de parada/fallo
+            try { playEffectWithDuck(audioFallo); } catch(e) {}
+        }// 6. Preparar el siguiente turno
+                endTurn();
+                
+            }, 1000); 
+        }
+
+        // MANEJADORES DE EVENTOS
+        
+        // Click en las zonas de la porter�a
+        goalHitbox.addEventListener('click', (event) => {
+            const zone = event.target.dataset.zone;
+            if (zone && !isGameLocked) {
+                if (currentShooter === 'bc') {
+                    handleShot(zone); // Usuario chuta (BC)
+                } else if (currentShooter === 'rm') {
+                    handleSave(zone); // Usuario para (BC)
+                }
+            }
+        });
+
+        
+        // Flash al pasar el rat�n por encima (hover simulado)
+        goalHitbox.addEventListener('mouseover', (event) => {
+            const zoneEl = event.target.closest('.goal-zone');
+            if (zoneEl) {
+                zoneEl.classList.add('flash');
+                setTimeout(() => zoneEl.classList.remove('flash'), 400);
+            }
+        });
+
+        
+        // --- Hover flash robusto: usar mouseenter/mouseleave por zona (evita problemas de bubbling) ---
+        (function setupZoneHoverFlash() {
+            const zones = document.querySelectorAll('.goal-zone');
+            zones.forEach(zone => {
+                // guardamos el id del timeout en una propiedad del elemento para poder limpiarlo
+                zone._flashTimeout = null;
+
+                zone.addEventListener('mouseenter', (e) => {
+                    // Evitar que el hover permanezca si el juego est� bloqueado o el elemento no es interactivo
+                    if (!zone.matches('.goal-zone')) return;
+                    // remove any inline styles possibly left
+                    zone.style.backgroundColor = '';
+                    zone.style.opacity = '';
+                    // aplicar la clase flash
+                    zone.classList.add('flash');
+                    // limpiar timeouts anteriores
+                    if (zone._flashTimeout) clearTimeout(zone._flashTimeout);
+                    zone._flashTimeout = setTimeout(() => {
+                        zone.classList.remove('flash');
+                        // asegurar que no queda ning�n estilo inline
+                        zone.style.backgroundColor = '';
+                        zone.style.opacity = '';
+                        zone._flashTimeout = null;
+                    }, 200);
+                });
+
+                zone.addEventListener('mouseleave', (e) => {
+                    // Al salir, eliminar la clase y cancelar timeouts
+                    if (zone._flashTimeout) {
+                        clearTimeout(zone._flashTimeout);
+                        zone._flashTimeout = null;
+                    }
+                    zone.classList.remove('flash');
+                    zone.style.backgroundColor = '';
+                    zone.style.opacity = '';
+                });
+
+                // Para dispositivos t�ctiles: mostramos el flash al tocar (touchstart)
+                zone.addEventListener('touchstart', (e) => {
+                    zone.classList.add('flash');
+                    if (zone._flashTimeout) clearTimeout(zone._flashTimeout);
+                    zone._flashTimeout = setTimeout(() => {
+                        zone.classList.remove('flash');
+                        zone.style.backgroundColor = '';
+                        zone.style.opacity = '';
+                        zone._flashTimeout = null;
+                    }, 200);
+                }, {passive: true});
+            });
+        })();
+
+        window.addEventListener('resize', checkOrientation);
+        
+        readyButton.addEventListener('click', () => {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            } else if (document.documentElement.mozRequestFullScreen) {
+                document.documentElement.mozRequestFullScreen();
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen();
+            } else if (document.documentElement.msRequestFullscreen) {
+                document.documentElement.msRequestFullscreen();
+            }
+            
+            fadeInAudio(audioTrack1, baseVolume);
+            currentAudioTrack = audioTrack1;
+
+            introContainer.style.display = 'flex';
+            doorLeft.style.display = 'block';
+            doorRight.style.display = 'block';
+            
+            setTimeout(() => {
+                startScreen.style.display = 'none';
+            }, 50);
+
+            setTimeout(() => {
+                doorLeft.classList.add('open');
+                doorRight.classList.add('open');
+            }, 100);
+
+            setTimeout(() => {
+                doorLeft.style.display = 'none';
+                doorRight.style.display = 'none';
+                introContinueButton.classList.add('active');
+                startFlashEffect();
+            }, 1500);
+        });
+
+        introContinueButton.addEventListener('click', (e) => {
+            if (introContinueButton.classList.contains('active')) {
+                fadeOutAudio(audioTrack1);
+                
+                setTimeout(() => {
+                    fadeInAudio(audioTrack2, baseVolume);
+                    currentAudioTrack = audioTrack2;
+                    
+                    introContainer.style.display = 'none';
+                    instructionsScreen.style.display = 'flex';
+                    clearInterval(flashInterval);
+                }, 1000);
+            }
+        });
+
+        pizarraContinueButton.addEventListener('click', () => {
+            instructionsScreen.style.display = 'none';
+            dialogueScreen.style.display = 'flex';
+        });
+
+        dorsalButtonsContainer.addEventListener('click', (event) => {
+            if (event.target.classList.contains('dorsal-button')) {
+                const dorsalNumber = event.target.dataset.dorsal;
+                saulImage.src = `images/barca/dorsal/saul_anim_${dorsalNumber}.gif`;
+                
+                dialogueText.textContent = `Has elegido el dorsal ${dorsalNumber}.`;
+
+                dorsalButtonsContainer.style.display = 'none';
+                confirmationContainer.style.display = 'flex';
+            }
+        });
+
+        confirmYesButton.addEventListener('click', () => {
+            dialogueScreen.style.display = 'none';
+            coinTossScreen.style.display = 'flex';
+        });
+
+        confirmNoButton.addEventListener('click', () => {
+            dialogueText.innerHTML = "&iexcl;Hola, soy Sa&uacute;l!. Ay&uacute;dame a ganar al Real Madrid en la Liga Lagartija. Yo har&eacute; la vez de jugador lanzador y de portero en el FC Barcelona. Ahora, dime qu&eacute; dorsal te gustar&iacute;a que tuviese.";
+            
+            dorsalButtonsContainer.style.display = 'grid';
+            confirmationContainer.style.display = 'none';
+            saulImage.src = `images/barca/saul_frontal.png`;
+        });
+        
+        // L�gica del lanzamiento de la moneda
+        coinCaraButton.addEventListener('click', () => {
+            handleCoinToss('cara');
+        });
+
+        coinCruzButton.addEventListener('click', () => {
+            handleCoinToss('cruz');
+        });
+
+        function handleCoinToss(choice) {
+            userChoice = choice;
+            coinButtons.style.display = 'none';
+            initialRefereeDialogue.style.display = 'none';
+			  initialRefereeDialogue.style.setProperty('display', 'none', 'important');
+            tossAnimationContainer.style.display = 'block';
+
+            setTimeout(() => {
+                tossAnimationContainer.style.display = 'none';
+                showCoinResult();
+            }, 1500); // 2.5 segundos para la animaci�n
+        }
+
+        function showCoinResult() {
+            const result = Math.random() < 0.5 ? 'cara' : 'cruz';
+			    initialRefereeDialogue.style.setProperty('display', 'none', 'important');
+			initialRefereeDialogue.style.display = 'none';
+            tossResultImage.src = `images/sel_${result}.png`;
+            tossResultContainer.style.display = 'block';
+            
+            const playerWins = (userChoice === result);
+            
+            if (playerWins) {
+                finalResultText.innerHTML = `&iexcl;Empieza el ${TEAM_BC_FULL}!`;
+				initialRefereeDialogue.style.setProperty('display', 'none', 'important');
+                startingTeam = 'bc'; // Barcelona
+            } else {
+                finalResultText.innerHTML = `&iexcl;Empieza el ${TEAM_RM_FULL}!`;
+				initialRefereeDialogue.style.setProperty('display', 'none', 'important');
+                startingTeam = 'rm'; // Real Madrid
+            }
+            finalResultText.style.display = 'block';
+
+            setTimeout(() => {
+                continueButton.style.display = 'block';
+            }, 1000);
+        }
+
+        continueButton.addEventListener('click', () => {
+            coinTossScreen.style.display = 'none';
+            penaltyAnimationScreen.style.display = 'block';
+
+            // 1. Establece la altura y la posici�n INICIAL (cielo visible) sin animaci�n.
+            handlePenaltyScreenScroll(); 
+            
+            // 2. Inicia la transici�n al punto final (porter�a visible) con el peque�o retraso.
+            startPenaltyScrollAnimation(); 
+            
+            // FADEOUT del audio anterior y FADEIN del nuevo
+            fadeOutAudio(audioTrack2);
+            setTimeout(() => {
+                fadeInAudio(audioTrack3, baseVolume);
+            }, 1000);
+            currentAudioTrack = audioTrack3;
+            
+            // Espera a que termine la animaci�n, luego hace el flash y la transici�n
+            setTimeout(() => {
+                // Flash
+                flashTransition.style.opacity = '1';
+                flashTransition.style.transition = 'opacity 0.2s';
+                
+                setTimeout(() => {
+                    flashTransition.style.opacity = '0';
+                    flashTransition.style.transition = 'opacity 0.5s';
+                    penaltyAnimationScreen.style.display = 'none';
+                    penaltyGameScreen.style.display = 'block';
+                    
+                    // LLAMADA CLAVE: Ajustar la posici�n al entrar en la pantalla de juego
+                    adjustGoalkeeperForFullscreen(); 
+
+                    // **L�GICA DE TURNO INICIAL:**
+                    currentShooter = startingTeam; // El que gan� el sorteo empieza
+                    
+                    // Mostramos la primera pantalla de transici�n antes de la jugada inicial
+                    const nextTeamName = getTeamName(currentShooter);
+                    const action = currentShooter === 'bc' ? 'CHUTAR' : 'PARAR';
+                    
+                    document.getElementById('transition-text').innerHTML = `Comienza el juego: ${nextTeamName}<br>Preparate a ${action.toUpperCase()}`;
+                    //document.getElementById('score-text').textContent = `${TEAM_BC_FULL}: 0 | ${TEAM_RM_FULL}: 0 (Tiros: 0/6)`;
+                    turnTransitionScreen.style.display = 'flex';
+
+                    // Cargar la porter�a vac�a antes de que la transici�n se vaya
+                    goalkeeperImage.src = 'images/porteria.png'; 
+                    goalkeeperImage.style.display = 'block'; 
+
+                    setTimeout(() => {
+                        turnTransitionScreen.style.display = 'none';
+                        startGameTurn(); 
+                    }, 2000); 
+
+                }, 200); 
+            }, 2050); 
+        });
+
+        // Inicializaci�n y Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            checkOrientation(); 
+            preloadImages().then(() => {
+                // Oculta la pantalla de carga y muestra la de inicio
+                loadingScreen.style.opacity = '0';
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                    startScreen.style.display = 'flex';
+                    handlePenaltyScreenScroll();
+                }, 1000); 
+            });
+        });
+        
+        window.addEventListener('load', checkOrientation);
+        window.addEventListener('resize', handlePenaltyScreenScroll);
+        
+        // EVENTO CLAVE: Escuchar cambios en el modo de pantalla completa para ajustar la posici�n
+        document.addEventListener('fullscreenchange', adjustGoalkeeperForFullscreen);
+        document.addEventListener('webkitfullscreenchange', adjustGoalkeeperForFullscreen);
+        document.addEventListener('mozfullscreenchange', adjustGoalkeeperForFullscreen);
+        document.addEventListener('MSFullscreenChange', adjustGoalkeeperForFullscreen);
+    </script>
+
+<!-- ------------------ Parche: sustitución de nombres por insignias ------------------ -->
+<style>
+  .team-badge {
+    height: 1.0em;
+    width: auto;
+    vertical-align: middle;
+    display: inline-block;
+    margin: 0 0.25em;
+    max-height: 40px;
+  }
+  @media (max-width: 768px) {
+    .team-badge { height: 0.9em; max-height: 28px; }
+  }
+</style>
+
+<script>
+(function(){
+  const IMG_BC = 'images/esc_bc.png';
+  const IMG_RM = 'images/esc_rm.png';
+  const patterns = [
+    { rx: /FC\s*Barcelona/gi, src: IMG_BC, alt: 'FC Barcelona' },
+    { rx: /Real\s*Madrid/gi, src: IMG_RM,  alt: 'Real Madrid'  }
+  ];
+  function createBadge(src, alt) {
+    const img = document.createElement('img');
+    img.className = 'team-badge';
+    img.src = src;
+    img.alt = alt;
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    return img;
+  }
+  function replaceInTextNode(textNode) {
+    let text = textNode.nodeValue;
+    if (!text) return;
+    let anyMatch = false;
+    for (const p of patterns) {
+      if (p.rx.test(text)) { anyMatch = true; break; }
+      p.rx.lastIndex = 0;
+    }
+    if (!anyMatch) return;
+    const frag = document.createDocumentFragment();
+    let cursor = 0;
+    while (cursor < text.length) {
+      let nextMatch = null;
+      let nextStart = -1;
+      let matchedPattern = null;
+      for (const p of patterns) {
+        p.rx.lastIndex = cursor;
+        const m = p.rx.exec(text);
+        if (m) {
+          const start = m.index;
+          if (nextMatch === null || start < nextStart) {
+            nextMatch = m;
+            nextStart = start;
+            matchedPattern = p;
+          }
+        }
+      }
+      if (!nextMatch) {
+        frag.appendChild(document.createTextNode(text.slice(cursor)));
+        break;
+      }
+      if (nextStart > cursor) {
+        frag.appendChild(document.createTextNode(text.slice(cursor, nextStart)));
+      }
+      const badge = createBadge(matchedPattern.src, matchedPattern.alt);
+      frag.appendChild(badge);
+      cursor = nextStart + nextMatch[0].length;
+    }
+    textNode.parentNode.replaceChild(frag, textNode);
+  }
+  function walkAndReplace(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function(node) {
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        const tag = parent.tagName;
+        if (['SCRIPT','STYLE','TEXTAREA','INPUT','OPTION'].includes(tag)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }, false);
+    const nodes = [];
+    let n;
+    while (n = walker.nextNode()) nodes.push(n);
+    for (const t of nodes) replaceInTextNode(t);
+  }
+  const mo = new MutationObserver(mutations => {
+    for (const mut of mutations) {
+      if (mut.addedNodes && mut.addedNodes.length) {
+        mut.addedNodes.forEach(node => {
+          if (node.nodeType === Node.TEXT_NODE) {
+            replaceInTextNode(node);
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            const tag = node.tagName;
+            if (['SCRIPT','STYLE','TEXTAREA','INPUT','OPTION'].includes(tag)) return;
+            walkAndReplace(node);
+          }
+        });
+      }
+      if (mut.type === 'characterData' && mut.target) {
+        replaceInTextNode(mut.target);
+      }
+      if (mut.type === 'attributes' && mut.target) {
+        const attrName = mut.attributeName;
+        if (['title','aria-label','alt'].includes(attrName)) {
+          const el = mut.target;
+          const val = el.getAttribute(attrName);
+          if (!val) return;
+          let newVal = val.replace(/FC\s*Barcelona/gi, '');
+          newVal = newVal.replace(/Real\s*Madrid/gi, '');
+          el.setAttribute(attrName, newVal);
+        }
+      }
+    }
+  });
+  function init() {
+    try { walkAndReplace(document.body); } catch (e) { console.error('replace init error', e); }
+    mo.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['title','aria-label','alt']
+    });
+  }
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(init, 0);
+  } else {
+    document.addEventListener('DOMContentLoaded', init);
+  }
+  window.__replaceTeamBadges_force = function(){ walkAndReplace(document.body); };
+})();
+</script>
+<!-- ----------------------------------------------------------------------------------- --></body>
+</html>
