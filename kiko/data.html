@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>KIKO ¡a DEFECAR!</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;width:100%;font-family:"Comic Sans MS",Arial,sans-serif;background:#000;overflow:hidden}
+  
+  /* Estilos Pantalla de Instrucciones */
+  #pantalla-instrucciones{position:absolute;inset:0;background:url('images/kiko_intro_parque.png') center/cover no-repeat;display:flex;justify-content:flex-end;align-items:center;padding-right:5%;}
+  #contenedor-instrucciones{background:rgba(255,255,255,0.75);border-radius:20px;padding:2.5vw;width:90%;max-width:420px;color:#222;line-height:1.5;text-align:justify}
+  #contenedor-instrucciones h1{text-align:center;color:#1f7a1f;font-size:clamp(1.2rem,3.6vw,2.3rem);margin-bottom:.6em}
+  #contenedor-instrucciones p{font-size:clamp(.9rem,2.4vw,1.1rem);margin-bottom:1.2em}
+  #btnComenzar{display:block;margin:0 auto;background:#4CAF50;color:#fff;padding:.8em 1.8em;border-radius:15px;border:0;cursor:pointer;font-size:clamp(1rem,2.6vw,1.2rem)}
+  
+  /* Selectores de Nivel */
+  #selector-nivel{text-align:center;margin-bottom:1.5em;}
+  #selector-nivel button{
+    background:#e0e0e0;border:1px solid #ccc;color:#333;padding:5px 10px;margin:0 5px;border-radius:8px;cursor:pointer;
+    font-size:clamp(.8rem,2vw,1rem);transition:background-color 0.2s;
+  }
+  #selector-nivel button.activo{background:#2a9d8f;color:#fff;border-color:#2a9d8f;}
+
+  @media (max-width:700px){
+    #pantalla-instrucciones{justify-content:center;padding:0}
+    #contenedor-instrucciones{width:100%;max-width:none;border-radius:0;background:rgba(255,255,255,0.85);padding:5vw 7vw}
+  }
+
+  /* Estilos Pantalla de Juego */
+  #pantalla-juego{position:absolute;inset:0;display:none;background:url('images/fondo_parque.png') center/cover no-repeat}
+  .sprite{position:absolute;user-select:none;pointer-events:none;image-rendering:auto}
+  #contador{position:absolute;left:20px;top:20px;color:#fff;font-weight:700;text-shadow:1px 1px 4px black}
+  #aciertos{position:absolute;right:20px;top:20px;color:#fff;font-weight:700;text-shadow:1px 1px 4px black}
+  
+  /* Los elementos kk y kkFallido ahora son solo referencias/templates y no se muestran directamente */
+  #kkFallido, #kk {
+    display: none; 
+    pointer-events: none;
+  }
+  
+  /* Estilos Pantalla Fase (Transición) */
+  #pantalla-fase {
+      position: absolute;
+      inset: 0;
+      background: url('images/kiko_fase.png') center/cover no-repeat;
+      z-index: 90;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: clamp(2rem, 8vw, 4rem);
+      font-weight: 900;
+      text-shadow: 2px 2px 8px black;
+  }
+  
+  /* Estilos Pantalla de Vuelo Prompt (¿Preparado? ¡YA! / INSTRUCCIÓN) */
+  #vuelo-prompt {
+      position: absolute;
+      inset: 0;
+      display: none; 
+      justify-content: center;
+      align-items: center;
+      font-size: 8vw; /* Tamaño inicial para ¡YA! */
+      color: #fff;
+      font-weight: 900;
+      text-shadow: 2px 2px 6px black;
+      z-index: 50; 
+  }
+
+  /* Estilos Pantalla Final */
+  #pantalla-final{
+    position:absolute;inset:0;background:rgba(0,0,0,0.8);
+    display:flex;justify-content:center;align-items:center;
+    z-index:100;
+  }
+  
+  /* Contenedor Final Base (Usado para VICTORIA: centrado) */
+  #contenedor-final{
+    background:rgba(255,255,255,0.95);border-radius:20px;padding:30px;
+    width:90%;max-width:500px;color:#222;
+    box-shadow:0 0 20px rgba(0,0,0,0.5);
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
+    text-align: center;
+  }
+  
+  /* Estilos Específicos para DERROTA (lose-layout: dividido) */
+  #contenedor-final.lose-layout {
+      max-width: 800px;
+      flex-direction: row; 
+      padding: 50px 30px;
+      align-items: center; 
+      text-align: left;
+  }
+  
+  /* Imagen de resultado */
+  #final-imagen {
+      width: 100%;
+      max-width: 300px; 
+      height: auto;
+      margin-bottom: 20px;
+  }
+  
+  /* Imagen en layout de pérdida: a la izquierda, más grande */
+  #contenedor-final.lose-layout #final-imagen {
+      width: 40%;
+      max-width: 350px;
+      margin-right: 30px;
+      margin-bottom: 0;
+  }
+  
+  /* Contenedor de texto y botón */
+  .final-texto {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex-grow: 1;
+  }
+
+  /* Título principal (Felicitación/Ánimo) */
+  #felicitacion-animo{
+    font-size: clamp(1.8rem,5vw,3rem);
+    margin-bottom:0.2em;
+    font-weight: 700;
+  }
+  
+  /* Puntuación */
+  #resumenAciertos{
+    font-size:clamp(1rem,3vw,1.3rem);
+    margin-bottom: 1.5em; 
+    font-weight: bold;
+    color: #444;
+  }
+  
+  /* Ajuste de título y texto en layout de pérdida */
+  #contenedor-final.lose-layout #felicitacion-animo {
+    text-align: left;
+  }
+  #contenedor-final.lose-layout #resumenAciertos {
+    text-align: left;
+    margin-top: 0.5em;
+  }
+  
+  /* Botón */
+  #btnJugarDeNuevo{
+    display:block;
+    margin:0 auto;
+    background:#5cb85c;color:#fff;
+    padding:.8em 1.8em;border-radius:15px;border:0;cursor:pointer;
+    font-size:clamp(1.1rem,3vw,1.3rem);
+  }
+
+  /* Ajuste del botón en layout de pérdida */
+  #contenedor-final.lose-layout #btnJugarDeNuevo {
+    margin: 1.5em 0 0 0;
+  }
+</style>
+</head>
+<body>
+
+<div id="pantalla-instrucciones">
+  <div id="contenedor-instrucciones">
+    <h1>KIKO ¡a DEFECAR!</h1>
+    
+    <div id="selector-nivel">
+        <p style="margin-bottom: 8px;">Selecciona la dificultad:</p>
+        <button data-nivel="1" class="activo">Nivel 1</button>
+        <button data-nivel="2">Nivel 2</button>
+        <button data-nivel="3">Nivel 3</button>
+    </div>
+    
+    <p id="texto-instrucciones">
+        Pulsa o toca para volar. En el aire, pulsa de nuevo para disparar.
+    </p>
+    
+    <button id="btnComenzar">Comenzar</button>
+  </div>
+</div>
+
+<div id="pantalla-juego">
+  <div id="contador">Vuelo: 0 / 5</div>
+  <div id="aciertos">Aciertos: 0</div>
+  <img id="rama" class="sprite" src="images/rama.png" alt="rama">
+  <img id="kikoParado" class="sprite" src="images/kiko_parado.png" alt="kiko parado">
+  <img id="kikoVolando" class="sprite" src="images/kiko_volando.gif" style="display:none" alt="kiko volando">
+  <img id="kikoDisparo" class="sprite" src="images/kiko_disparo.gif" style="display:none" alt="kiko disparo">
+  <img id="kk" class="sprite" src="images/kk.gif" style="display:none" alt="proyectil">
+  <img id="kkFallido" class="sprite" src="images/kk_fallo.png" style="display:none" alt="fallo">
+  
+  <div id="personas"></div>
+  <div id="vuelo-prompt" style="display:none"></div>
+</div>
+
+<div id="pantalla-fase" style="display:none"></div>
+
+<div id="pantalla-final" style="display:none">
+  <div id="contenedor-final">
+    <img id="final-imagen" src="" alt="Resultado Final">
+    
+    <div class="final-texto">
+      <h1 id="felicitacion-animo"></h1>
+      <p id="resumenAciertos"></p>
+      <button id="btnJugarDeNuevo">Jugar de Nuevo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const fondoBase = { width:1536, height:1024 };
+const kikoParadoRel = { x:20, y:106, w:82, h:101 };
+const ramaRel = { w:150, h:55 };
+const personasDisponibles = ['001','002','003'];
+
+// CONFIGURACIÓN DE NIVELES (VuelosTotales es la suma de los vuelos en 'estructura')
+const niveles = {
+    1: {
+        nombre: "Nivel 1: Paseo Solitario",
+        vuelosTotales: 5,
+        estructura: [
+            { vuelos: 5, personas: 1 }
+        ]
+    },
+    2: {
+        nombre: "Nivel 2: Amigos del Parque",
+        vuelosTotales: 8,
+        estructura: [
+            { vuelos: 5, personas: 1 },
+            { vuelos: 3, personas: 2 } 
+        ]
+    },
+    3: {
+        nombre: "Nivel 3: Reunión Familiar",
+        vuelosTotales: 10,
+        estructura: [
+            { vuelos: 5, personas: 1 },
+            { vuelos: 3, personas: 2 },
+            { vuelos: 2, personas: 3 } 
+        ]
+    }
+};
+
+// 1. ACIERTOS MÍNIMOS REQUERIDOS PARA GANAR
+const metasRequeridas = {
+    1: 3,
+    2: 8,
+    3: 14
+};
+
+const pantallaInstrucciones=document.getElementById('pantalla-instrucciones');
+const pantallaJuego=document.getElementById('pantalla-juego');
+const btnComenzar=document.getElementById('btnComenzar');
+const rama=document.getElementById('rama');
+const kikoParado=document.getElementById('kikoParado');
+const kikoVolando=document.getElementById('kikoVolando');
+const kikoDisparo=document.getElementById('kikoDisparo');
+// Obtenemos solo la URL de la imagen kk y kkFallido para usarla dinámicamente
+const kkSpriteSrc = document.getElementById('kk').src;
+const kkFallidoSpriteSrc = document.getElementById('kkFallido').src;
+
+const contador=document.getElementById('contador');
+const marcador=document.getElementById('aciertos');
+const contPersonas=document.getElementById('personas');
+const nivelBotones=document.querySelectorAll('#selector-nivel button');
+
+const textoInstrucciones=document.getElementById('texto-instrucciones');
+
+
+// ELEMENTOS DE LA PANTALLA FINAL Y FASE
+const pantallaFase=document.getElementById('pantalla-fase');
+const pantallaFinal=document.getElementById('pantalla-final');
+const contenedorFinal=document.getElementById('contenedor-final');
+const finalImagen=document.getElementById('final-imagen');
+const felicitacionAnimo=document.getElementById('felicitacion-animo');
+const resumenAciertos=document.getElementById('resumenAciertos');
+const btnJugarDeNuevo=document.getElementById('btnJugarDeNuevo');
+const vueloPrompt=document.getElementById('vuelo-prompt');
+
+// VARIABLES DE ESTADO DEL JUEGO
+let nivelActual = 1; 
+let faseActualIndex = 0; 
+let vuelosCompletadosEnNivel = 0; 
+let vuelosFaseActual = 0; 
+let impactosRestantesEnVuelo = 0; 
+let personasActivas = []; 
+
+let volando=false, bloqueado=true, canShoot=false;
+let escalaX=1, escalaY=1, kW=0,kH=0,kX=0,kY=0;
+let posKikoX=0,posKikoY=0;
+let aciertos = 0;
+
+const musica = new Audio('sonidos/ingame.mp3');
+musica.loop=true; musica.volume=0.1;
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function entrarPantallaCompleta(){
+  const el=document.documentElement;
+  // Solo si no estamos ya en pantalla completa
+  if(el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen();
+}
+
+/* Escalado */
+function ajustarSprites(){
+  const W=window.innerWidth,H=window.innerHeight;
+  escalaX=W/fondoBase.width; escalaY=H/fondoBase.height;
+  const ramaW=ramaRel.w*escalaX,ramaH=ramaRel.h*escalaY;
+  const ramaX=0,ramaY=(kikoParadoRel.y*escalaY)+(kikoParadoRel.h*escalaY)-(ramaH*0.6);
+  Object.assign(rama.style,{width:`${ramaW}px`,height:`${ramaH}px`,left:`${ramaX}px`,top:`${ramaY}px`});
+  kW=kikoParadoRel.w*escalaX;kH=kikoParadoRel.h*escalaY;
+  kX=(ramaX+ramaW-kW)-(44*escalaX);kY=(kikoParadoRel.y*escalaY)-(10*escalaY);
+  [kikoParado,kikoVolando,kikoDisparo].forEach(el=>{
+    Object.assign(el.style,{width:`${kW}px`,height:`${kH}px`,left:`${kX}px`,top:`${kY}px`});
+  });
+}
+
+/* Genera personas en el parque */
+function generarPersonas(num) {
+  contPersonas.innerHTML = ''; 
+  personasActivas = [];
+
+  const escalaBase = window.innerWidth / 1536;
+  const proporcion = 250 / 90;
+  const anchoBase = 90 * escalaBase * 1.3 * 0.75;
+  
+  const margenIzq = 200 * escalaBase;
+  const margenDer = 50 * escalaBase;
+  const espacioDisponible = window.innerWidth - margenIzq - margenDer;
+  const anchoZonaPersona = anchoBase * 1.5; 
+  const idsDisponibles = [...personasDisponibles];
+
+  for (let i = 0; i < num; i++) {
+    const randomIndex = Math.floor(Math.random() * idsDisponibles.length);
+    const id = idsDisponibles.splice(randomIndex, 1)[0] || personasDisponibles[i % personasDisponibles.length];
+
+    const img = document.createElement('img');
+    img.src = `images/${id}_parado.gif`;
+    img.className = 'sprite';
+
+    const w = anchoBase;
+    const h = w * proporcion;
+    
+    let x, y, superpuesta = true;
+    let intentos = 0;
+
+    while (superpuesta && intentos < 50) {
+        superpuesta = false;
+        x = margenIzq + Math.random() * (espacioDisponible - w);
+        y = window.innerHeight * 0.85 - h + 50;
+
+        for (const p of personasActivas) {
+            if (x < p.x + anchoZonaPersona && x + anchoZonaPersona > p.x) {
+                superpuesta = true;
+                break;
+            }
+        }
+        intentos++;
+    }
+
+    Object.assign(img.style, {
+      width: `${w}px`,
+      height: `${h}px`,
+      left: `${x}px`,
+      top: `${y}px`,
+    });
+
+    contPersonas.appendChild(img);
+    personasActivas.push({ 
+        el: img, 
+        x, y, w, h, 
+        id, 
+        impactada: false 
+    });
+  }
+}
+
+/* Sonidos */
+async function reproducirSonidoVuelo(){
+  const n=Math.floor(Math.random()*4)+1;
+  const a=new Audio(`sonidos/${String(n).padStart(3,'0')}.mp3`);
+  return new Promise(r=>{a.addEventListener('ended',r);a.play();});
+}
+function reproducirSonidoDisparo(){
+  const n=Math.floor(Math.random()*4)+1;
+  const a=new Audio(`sonidos/pedo${n}.mp3`); a.play();
+}
+
+// 2. ACTUALIZACIÓN DEL TEXTO DE INSTRUCCIONES DINÁMICO
+function actualizarInstrucciones(nivelId) {
+    const nivel = nivelId || nivelActual;
+    let texto = "";
+
+    if (nivel == 1) {
+        texto = `
+            Pulsa o toca para volar. En el aire, pulsa de nuevo para disparar.<br><br>
+            Tienes hasta <b>1</b> cagada por vuelo. ¡Apunta bien!
+        `;
+    } else if (nivel == 2) {
+        texto = `
+            Pulsa o toca para volar. En el aire, pulsa de nuevo para disparar.<br><br>
+            Puedes disparar hasta el mismo número de cagadas por vuelo, como número de personas en pantalla. Un máximo de <b>2</b>. ¡Apunta bien!
+        `;
+    } else if (nivel == 3) {
+        texto = `
+            Pulsa o toca para volar. En el aire, pulsa de nuevo para disparar.<br><br>
+            Puedes disparar hasta el mismo número de cagadas por vuelo, como número de personas en pantalla. Un máximo de <b>3</b>. ¡Apunta bien!
+        `;
+    }
+    
+    textoInstrucciones.innerHTML = texto;
+}
+
+// Función para calcular el total de personas/disparos posibles en el nivel
+function calcularTotalPersonas(nivelId) {
+    const nivel = niveles[nivelId];
+    let total = 0;
+    nivel.estructura.forEach(fase => {
+        total += fase.vuelos * fase.personas;
+    });
+    return total;
+}
+
+// FUNCIÓN PARA CARGAR LA SIGUIENTE FASE O REPETIR VUELO
+function transicionEntreVuelos() {
+    // Limpia el parque de personas y restos de disparos
+    contPersonas.innerHTML = '';
+    document.querySelectorAll('.kk-fallido').forEach(el => el.remove()); 
+    personasActivas = [];
+	
+	// Mostrar prompt "Pulsa para siguiente vuelo"
+  vueloPrompt.style.fontSize = '5vw'; // Tamaño mediano para el aviso
+  vueloPrompt.textContent = "Pulsa para siguiente vuelo";
+  vueloPrompt.style.display = 'flex';
+
+    const nivel = niveles[nivelActual];
+    const fase = nivel.estructura[faseActualIndex];
+    
+    if (vuelosFaseActual >= fase.vuelos) {
+        faseActualIndex++; 
+        vuelosFaseActual = 0; 
+    }
+    
+    if (faseActualIndex < nivel.estructura.length) {
+        //const siguienteFase = nivel.estructura[faseActualIndex]; // No necesario aquí
+
+        pantallaFase.style.display = 'flex'; 
+        
+        setTimeout(()=>{
+            pantallaFase.style.display = 'none';
+            kikoParado.style.display = 'block'; 
+            ajustarSprites(); 
+            bloqueado = false; 
+            contador.textContent = `Vuelo: ${vuelosCompletadosEnNivel} / ${nivel.vuelosTotales}`; 
+        }, 1000); 
+
+    } else {
+        setTimeout(finalizarJuego, 1000); 
+    }
+}
+
+
+// FUNCIÓN PARA MOSTRAR LA PANTALLA DE FIN DE JUEGO
+function finalizarJuego(){
+  contPersonas.innerHTML = '';
+  kikoParado.style.display='none'; 
+  pantallaFase.style.display='none';
+
+  const nivel = niveles[nivelActual];
+  const meta = metasRequeridas[nivelActual]; // 1. USANDO LA META REQUERIDA
+  const totalPersonas = calcularTotalPersonas(nivelActual); // Calculamos el total real
+
+  const esGanador = aciertos >= meta;
+
+  contenedorFinal.classList.remove('lose-layout'); 
+
+  if (esGanador) {
+    finalImagen.src = 'images/kiko_gana.png';
+    felicitacionAnimo.textContent = "¡VICTORIA! ¡KIKO ES EL AMO DEL PARQUE!";
+    felicitacionAnimo.style.color = "#4CAF50"; 
+    resumenAciertos.textContent = `¡Lograste ${aciertos} aciertos de ${totalPersonas} posibles en ${nivel.nombre}!`;
+  } else {
+    finalImagen.src = 'images/kiko_pierde.png';
+    contenedorFinal.classList.add('lose-layout');
+    felicitacionAnimo.textContent = "¡ÁNIMO! LA PRÓXIMA VEZ SERÁ MEJOR";
+    felicitacionAnimo.style.color = "#d9534f"; 
+    const faltaron = meta - aciertos;
+    resumenAciertos.textContent = `Necesitas ${meta} aciertos para ganar. Te faltaron ${faltaron}. Has conseguido: ${aciertos} / ${totalPersonas}.`;
+  }
+
+  pantallaJuego.style.display='block';
+  pantallaFinal.style.display='flex';
+  musica.pause(); musica.currentTime=0;
+}
+
+// FUNCIÓN PARA REINICIAR AL ESTADO INICIAL (PANTALLA DE INSTRUCCIONES)
+function reiniciarJuego(){
+  // Reset de variables de juego
+  vuelosCompletadosEnNivel = 0;
+  vuelosFaseActual = 0;
+  faseActualIndex = 0;
+  aciertos=0;
+  
+  // Limpia cualquier proyectil, fallo o persona del juego
+  document.querySelectorAll('.kk-projectile, .kk-fallido').forEach(el => el.remove());
+  contPersonas.innerHTML = '';
+  kikoParado.style.display = 'none'; 
+  kikoVolando.style.display = 'none';
+
+  // Detiene la música
+  musica.pause(); musica.currentTime=0;
+
+  // Vuelve a la pantalla de instrucciones y activa Fullscreen
+  entrarPantallaCompleta(); 
+  pantallaFinal.style.display='none';
+  pantallaJuego.style.display='none';
+  pantallaInstrucciones.style.display='flex'; 
+  
+  // Asegura que las instrucciones reflejen el nivel activo
+  actualizarInstrucciones(nivelActual);
+  
+  // Bloquea el juego hasta que el usuario pulse "Comenzar"
+  bloqueado=true; 
+}
+btnJugarDeNuevo.addEventListener('click', reiniciarJuego);
+
+// FUNCIÓN DE INICIO DE JUEGO (llamada desde btnComenzar)
+async function iniciarJuego() {
+    entrarPantallaCompleta();
+    pantallaInstrucciones.style.display='none';
+    pantallaJuego.style.display='block';
+    try{await musica.play();}catch(e){}
+    ajustarSprites();
+
+
+
+    // Inicializa marcadores y estado para el nivel elegido
+    const nivelInicial = niveles[nivelActual];
+    marcador.textContent=`Aciertos: ${aciertos}`;
+    contador.textContent=`Vuelo: 0 / ${nivelInicial.vuelosTotales}`;
+    
+    // El juego ya no está bloqueado (listo para el primer click que llama a iniciarVuelo)
+    bloqueado = false; 
+    kikoParado.style.display = 'block'; // Asegura que Kiko esté visible para el inicio
+}
+
+/* Lógica de Selección de Nivel */
+nivelBotones.forEach(btn => {
+    btn.addEventListener('click', () => {
+        nivelBotones.forEach(b => b.classList.remove('activo'));
+        btn.classList.add('activo');
+        nivelActual = parseInt(btn.dataset.nivel);
+        actualizarInstrucciones(nivelActual); 
+    });
+});
+document.addEventListener('DOMContentLoaded', () => {
+    // Inicializa la dificultad visual al cargar la página
+    actualizarInstrucciones(nivelActual);
+});
+
+
+/* Evento de Inicio */
+btnComenzar.addEventListener('click', iniciarJuego);
+
+window.addEventListener('resize',()=>{if(pantallaJuego.style.display==='block')ajustarSprites();});
+
+   
+
+/* Vuelo */
+async function iniciarVuelo(){
+  const nivel = niveles[nivelActual];
+  
+  // Limpia los restos de fallos de la ronda anterior por si acaso
+  document.querySelectorAll('.kk-fallido').forEach(el => el.remove());
+
+  if(bloqueado || volando || vuelosCompletadosEnNivel >= nivel.vuelosTotales) return;
+  
+  bloqueado=true; canShoot=false;
+
+  const fase = nivel.estructura[faseActualIndex]; 
+  
+  
+  vuelosCompletadosEnNivel++;
+  vuelosFaseActual++;
+  
+  impactosRestantesEnVuelo = fase.personas; 
+  
+  contador.textContent=`Vuelo: ${vuelosCompletadosEnNivel} / ${nivel.vuelosTotales}`;
+
+  generarPersonas(fase.personas);
+  await sleep(1000); 
+
+  // Mostrar prompt "Preparado"
+  vueloPrompt.style.fontSize = '8vw'; // Tamaño grande para el aviso
+  vueloPrompt.textContent = "¿Preparado?";
+  vueloPrompt.style.display = 'flex';
+  
+  await reproducirSonidoVuelo();
+  
+  // Mostrar prompt "¡YA!"
+  vueloPrompt.textContent = "¡YA!";
+  await sleep(500); 
+  
+
+  setTimeout(() => {
+    vueloPrompt.style.display = 'none';
+    vueloPrompt.style.fontSize = '8vw'; // Restaura el tamaño para el siguiente "Preparado"
+  }, 1500); // Se oculta a los 1.5 segundos
+
+  kikoParado.style.display='none'; kikoVolando.style.display='block';
+  canShoot=true; volando=true;
+
+  let posX=kX,t=0,baseY=kY;
+  const v=Math.random()*3+3,amp=10*escalaY,freq=25,W=window.innerWidth;
+
+  function loop(){
+    if(!volando)return;
+    t++; posX+=v;
+    const posY=baseY+Math.sin(t/freq)*amp;
+    posKikoX=posX; posKikoY=posY;
+    
+    const activo=(kikoDisparo.style.display==='block')?kikoDisparo:kikoVolando;
+    activo.style.left=`${posX}px`; activo.style.top=`${posY}px`;
+    
+    if(posX<W+kW){requestAnimationFrame(loop);}
+    else{
+      volando=false; canShoot=false;
+      kikoVolando.style.display='none'; 
+      kikoDisparo.style.display='none';
+      vueloPrompt.style.display = 'none'; // Asegura que se oculte al final del vuelo
+      
+      if(vuelosCompletadosEnNivel < nivel.vuelosTotales){
+        setTimeout(transicionEntreVuelos, 2000); 
+      } else {
+        setTimeout(finalizarJuego, 2000); 
+      }
+    }
+  }
+  loop();
+}
+
+/* Disparo */
+function disparar(){
+  if(!volando||!canShoot||impactosRestantesEnVuelo <= 0)return;
+  
+  impactosRestantesEnVuelo--; 
+  
+  // Ocultar el prompt de instrucción si todavía está visible al disparar
+  vueloPrompt.style.display = 'none';
+  vueloPrompt.style.fontSize = '8vw';
+
+  reproducirSonidoDisparo();
+  
+  kikoVolando.style.display='none'; 
+  kikoDisparo.style.display='block';
+  setTimeout(()=>{
+      if(volando) {
+          kikoDisparo.style.display = 'none';
+          kikoVolando.style.display = 'block';
+      }
+  }, 50); 
+
+  // 1. CREAR NUEVO PROYECTIL (kk)
+  const kk = document.createElement('img');
+  kk.src = kkSpriteSrc;
+  kk.className = 'sprite kk-projectile';
+  pantallaJuego.appendChild(kk);
+
+  const startX = posKikoX + kW/2 - (kW*0.1);
+  const startY = posKikoY + kH*0.85;
+  const kkSize = Math.max(8,kW*0.20);
+  
+  Object.assign(kk.style, {
+      width: `${kkSize}px`,
+      height: `${kkSize}px`,
+      left: `${startX}px`,
+      top: `${startY}px`,
+      display: 'block'
+  });
+  
+  let x=startX,y=startY,vy=0,rot=25,vx=2*escalaX;
+  const suelo=window.innerHeight*0.85+50;
+  
+  kk.style.transform=`rotate(${rot}deg)`;
+
+  function caer(){
+    if(!kk.parentNode) return;
+
+    vy+=0.5*escalaY; y+=vy; x+=vx;
+    if(rot>0)rot=Math.max(0,rot-1);
+    kk.style.transform=`rotate(${rot}deg)`; kk.style.left=`${x}px`; kk.style.top=`${y}px`;
+
+    // Comprobar colisión
+    for (const p of personasActivas) {
+        if (p.impactada) continue; 
+        
+        const centroPersona = p.x + p.w / 2;
+        const zonaIzq = centroPersona - 25;
+        const zonaDer = centroPersona + 25;
+        const zonaTop = p.y;
+        const zonaBottom = p.y + 30;
+        const centroKKx = x + kkSize / 2;
+        const fondoKKy = y + kkSize;
+
+        if (centroKKx >= zonaIzq && centroKKx <= zonaDer && fondoKKy >= zonaTop && fondoKKy <= zonaBottom) {
+            
+            new Audio('sonidos/chof1.mp3').play();
+            p.el.src = `images/${p.id}_impacto.png`;
+            p.impactada = true; 
+            
+            // Reajuste de sprite por impacto
+            const factorEscalaAltura = 1.0; 
+            const factorEstrechamientoAncho = 1.4; 
+
+            const newH = p.h * factorEscalaAltura;
+            const newW = p.w * factorEscalaAltura * factorEstrechamientoAncho; 
+            const oldBottom = p.y + p.h;
+            const newTop = oldBottom - newH;
+
+            Object.assign(p.el.style, {
+                width: `${newW}px`,
+                height: `${newH}px`,
+                top: `${newTop}px`,
+                left: `${p.x + (p.w - newW) / 2}px`
+            });
+            
+            kk.remove(); 
+            aciertos++;
+            marcador.textContent=`Aciertos: ${aciertos}`;
+            return; 
+        }
+    }
+
+    if(y<suelo){
+      requestAnimationFrame(caer); 
+      
+    } else {
+      // Impacto fallido: Llega al suelo
+
+      const chof=new Audio('sonidos/chof_fallo.mp3'); chof.play();
+      kk.remove(); 
+      
+      // 2. CREAR NUEVO SPRITE DE FALLO (Persistente)
+      const kkFallido = document.createElement('img');
+      kkFallido.src = kkFallidoSpriteSrc;
+      kkFallido.className = 'sprite kk-fallido'; 
+      pantallaJuego.appendChild(kkFallido);
+
+      const kkFallidoW = kkSize + 20;
+      Object.assign(kkFallido.style, {
+          width: `${kkFallidoW}px`,
+          height: `${kkSize}px`,
+          left: `${x - 10}px`,
+          top: `${suelo}px`,
+          display: 'block'
+      });
+      
+      return; 
+    }
+  }
+  requestAnimationFrame(caer);
+}
+
+/* Eventos */
+function handleInput(){
+    if(pantallaInstrucciones.style.display!=='none')return;
+    if(pantallaFinal.style.display!=='none')return;
+    if(pantallaFase.style.display!=='none')return; 
+
+    // Mecánica de disparo: si volando y quedan impactos, dispara.
+    if(volando&&canShoot&&impactosRestantesEnVuelo > 0){disparar();return;}
+    
+    // Mecánica de inicio de vuelo: si no está volando, iniciar.
+    if(!volando)iniciarVuelo();
+}
+
+window.addEventListener('click', handleInput);
+window.addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();handleInput();}
+});
+</script>
+</body>
+</html>
