@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Spidey Climber - Plataformas Vertical</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    body {
+      background-color: #090d16;
+      color: #ffffff;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .btn-glow {
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+      transition: all 0.15s ease;
+    }
+    .btn-glow:active {
+      transform: scale(0.95);
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);
+    }
+
+    .btn-touch {
+      background: #1e293b;
+      border: 2px solid #334155;
+      color: white;
+      border-radius: 16px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      touch-action: none;
+      cursor: pointer;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+      transition: background-color 0.1s, transform 0.05s;
+    }
+    .btn-touch:active, .btn-touch.active {
+      background: #3b82f6;
+      border-color: #60a5fa;
+      transform: translateY(2px);
+    }
+
+    .btn-jump-touch {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      border-color: #f87171;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
+    }
+    .btn-jump-touch:active, .btn-jump-touch.active {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+    }
+
+    .card-select {
+      border: 3px solid #334155;
+      background: #1e293b;
+      transition: all 0.2s ease;
+    }
+    .card-select.selected {
+      border-color: #ef4444;
+      background: #2e1065;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+    }
+
+    #landscape-warning {
+      display: none;
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      touch-action: none;
+    }
+
+    /* =========================================================
+       CONTROLES TÁCTILES MÓVILES
+       Solo aparecen en pantallas móviles.
+       La mitad inferior del juego queda dividida en:
+       27% izquierda | 27% derecha | 46% salto.
+       Las zonas son transparentes.
+       ========================================================= */
+    #mobile-touch-controls {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 50vh;
+      min-height: 180px;
+      z-index: 30;
+      display: flex;
+      pointer-events: none;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .mobile-touch-zone {
+      height: 100%;
+      pointer-events: auto;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      background: transparent;
+    }
+
+    #mobile-left-zone  { width: 27%; }
+    #mobile-right-zone { width: 27%; }
+    #mobile-jump-zone  { width: 46%; }
+
+    @media (min-width: 851px) {
+      #mobile-touch-controls { display: none; }
+    }
+
+    @media (max-width: 850px) {
+      /* En móvil los botones pequeños de PC no ocupan espacio. */
+      #desktop-touch-controls { display: none; }
+    }
+
+  </style>
+</head>
+<body>
+
+<div id="game-container" class="relative w-full max-w-md h-[100vh] max-h-[100vh] flex flex-col justify-between items-center bg-slate-900 p-2 overflow-hidden shadow-2xl">
+
+  <!-- AVISO GIRO DE PANTALLA -->
+  <div id="landscape-warning" class="fixed inset-0 z-[100] bg-slate-950 flex-col items-center justify-center p-6 text-center">
+    <div class="text-5xl mb-4 animate-bounce">📱🔄</div>
+    <h2 class="text-xl font-black text-red-500 uppercase mb-2">Por favor, gira tu dispositivo</h2>
+    <p class="text-sm text-slate-300">Este juego está diseñado para jugarse en posición vertical en móviles.</p>
+  </div>
+
+  <!-- PANTALLA DE INICIO Y SELECCIÓN DE PERSONAJE -->
+  <div id="start-screen" class="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col justify-between items-center p-5 text-center">
+    <div class="mt-2">
+      <h1 class="text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-sky-400 to-red-500 uppercase">
+        Spidey Climber
+      </h1>
+      <p class="text-xs text-slate-400 mt-1">Escala los 10 niveles verticalmente</p>
+    </div>
+
+    <!-- Selección de Personajes -->
+    <div class="w-full my-auto">
+      <h2 class="text-xs font-bold text-slate-400 mb-3 tracking-wide uppercase">ELIGE TU HÉROE</h2>
+      
+      <div class="grid grid-cols-2 gap-4 w-full max-w-xs mx-auto">
+        <!-- Spiderman (Zeus) -->
+        <div id="card-boy" onclick="selectCharacter('boy', event)" class="card-select selected rounded-2xl p-2 flex flex-col items-center cursor-pointer">
+          <div class="w-24 h-28 bg-slate-900/80 rounded-xl flex items-center justify-center mb-1 overflow-hidden shadow-inner">
+            <img id="img-select-b" src="sprites/selecB.gif" onerror="this.onerror=null; this.src='selecB.gif';" alt="Spiderman" class="w-[100px] h-[114px] object-contain">
+          </div>
+          <span class="font-bold text-xs text-red-400">ZEUS (SPIDEY)</span>
+        </div>
+
+        <!-- Spiderwoman (Inma) -->
+        <div id="card-girl" onclick="selectCharacter('girl', event)" class="card-select rounded-2xl p-2 flex flex-col items-center cursor-pointer">
+          <div class="w-24 h-28 bg-slate-900/80 rounded-xl flex items-center justify-center mb-1 overflow-hidden shadow-inner">
+            <img id="img-select-g" src="sprites/selecG.gif" onerror="this.onerror=null; this.src='selecG.gif';" alt="Spiderwoman" class="w-[100px] h-[114px] object-contain">
+          </div>
+          <span class="font-bold text-xs text-pink-400">INMA (GWEN)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 w-full text-left text-xs text-slate-400 space-y-1">
+      <p class="text-slate-200 font-semibold mb-1">🎮 Controles:</p>
+      <p>• Botones ◀ / ▶ para moverte a izquierda/derecha.</p>
+      <p>• Botón SALTAR (permite Doble Salto en el aire).</p>
+      <p>• Tecla <span class="text-yellow-400 font-bold">M</span> para activar/silenciar audio.</p>
+    </div>
+
+    <button onclick="handleStartClick(event)" class="w-full max-w-xs py-3.5 bg-red-600 hover:bg-red-500 text-white font-black text-lg rounded-xl tracking-wider uppercase mb-1 btn-glow cursor-pointer">
+      ¡TOCA PARA JUGAR!
+    </button>
+  </div>
+
+  <!-- MODAL SOBREPUESTO DE MUERTE / GAME OVER / VICTORIA -->
+  <div id="death-modal" onclick="handleUniversalTouch()" class="hidden absolute inset-0 z-40 bg-black/70 flex flex-col justify-center items-center backdrop-blur-[2px] cursor-pointer">
+    <div id="death-gif-container" class="w-[150px] h-[164px] bg-slate-900/90 border-2 border-red-500 rounded-2xl flex flex-col items-center justify-center p-2 shadow-2xl relative overflow-hidden transition-all duration-300">
+      <img id="death-gif" src="sprites/SBmuerte.gif" onerror="this.onerror=null; this.src='SBmuerte.gif';" alt="Muerte / GameOver" class="w-full h-full object-contain">
+    </div>
+    <div id="death-text-container" class="mt-4 text-center bg-slate-950/90 border border-slate-800 px-4 py-2 rounded-xl max-w-[280px]">
+      <p id="death-title" class="text-sm font-black text-red-500 uppercase tracking-wider">¡HAS CAÍDO!</p>
+      <p id="death-subtitle" class="text-[11px] text-slate-300 font-semibold mt-0.5">Toca para continuar</p>
+      <p id="death-cooldown-text" class="text-[10px] text-yellow-400 font-bold mt-1">Espera (3s)...</p>
+    </div>
+  </div>
+
+  <!-- HUD SUPERIOR -->
+  <div id="hud" class="w-full flex justify-between items-center bg-slate-950 border border-slate-800 px-4 py-2 rounded-xl mb-1 shadow-md">
+    <div class="flex items-center space-x-2">
+      <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Nivel</span>
+      <span id="level-display" class="text-lg font-black text-sky-400">1</span>
+      <span class="text-xs text-slate-500">/10</span>
+    </div>
+    
+    <div class="flex items-center space-x-2">
+      <button id="btn-mute" onclick="toggleMute(event)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-xs font-bold text-slate-200 px-2 py-1 rounded-lg border border-slate-700 flex items-center gap-1 transition-all">
+        <span id="mute-icon">🔊</span>
+        <span id="mute-text" class="text-[10px] text-slate-400">SONIDO</span>
+      </button>
+      <div id="lives-container" class="flex space-x-1"></div>
+    </div>
+  </div>
+
+  <!-- CANVAS DEL JUEGO -->
+  <div class="relative w-full flex-1 flex justify-center items-center overflow-hidden">
+    <canvas id="gameCanvas" class="bg-slate-950 border-2 border-slate-800 rounded-xl shadow-2xl w-full h-full max-h-full object-contain"></canvas>
+  </div>
+
+  <!-- MANDOS TÁCTILES PARA PC / TABLET -->
+  <div id="desktop-touch-controls" class="w-full flex justify-between items-center gap-3 mt-1 px-1 py-1">
+    <div class="flex gap-2">
+      <button id="btn-left" class="btn-touch w-16 h-14 text-2xl">◀</button>
+      <button id="btn-right" class="btn-touch w-16 h-14 text-2xl">▶</button>
+    </div>
+    <button id="btn-jump" class="btn-touch btn-jump-touch flex-1 h-14 text-sm font-black tracking-wider uppercase">
+      SALTAR ⬆
+    </button>
+  </div>
+
+  <!-- CONTROLES MÓVILES: izquierda | derecha | salto -->
+  <div id="mobile-touch-controls" aria-label="Controles táctiles móviles">
+    <div id="mobile-left-zone" class="mobile-touch-zone"></div>
+    <div id="mobile-right-zone" class="mobile-touch-zone"></div>
+    <div id="mobile-jump-zone" class="mobile-touch-zone"></div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = 360;
+canvas.height = 540;
+
+const startScreen = document.getElementById('start-screen');
+const deathModal = document.getElementById('death-modal');
+const deathGifContainer = document.getElementById('death-gif-container');
+const deathGif = document.getElementById('death-gif');
+const deathTitle = document.getElementById('death-title');
+const deathSubtitle = document.getElementById('death-subtitle');
+const deathCooldownText = document.getElementById('death-cooldown-text');
+const levelDisplay = document.getElementById('level-display');
+const livesContainer = document.getElementById('lives-container');
+const landscapeWarning = document.getElementById('landscape-warning');
+
+let selectedHero = 'boy'; 
+let currentLevel = 1;
+let lives = 10;
+let gameState = 'START'; // 'START', 'PLAYING', 'DEAD', 'GAMEOVER', 'WIN'
+let cameraY = 0;
+
+let isMuted = false;
+let canInteractAfterDeath = false;
+let cooldownTimer = null;
+let cooldownInterval = null;
+
+const GRAVITY = 0.45;
+const JUMP_FORCE = -10.5;
+const MOVE_SPEED = 4.5;
+
+const keys = { left: false, right: false, jump: false };
+
+let platforms = [];
+let enemies = [];
+let goalPlatform = null;
+let gameTime = 0;
+let heroImmune = false;
+let zKeyDown = false;
+let iKeyDown = false;
+let doubleJumpTrail = [];
+let doubleJumpTrailTick = 0;
+
+// Carga de los 4 sprites exactos por personaje
+const heroSprites = {
+  boy: {
+    idle: new Image(),
+    crouch: new Image(),
+    jump: new Image(),
+    doubleJump: new Image(),
+    loaded: { idle: false, crouch: false, jump: false, doubleJump: false }
+  },
+  girl: {
+    idle: new Image(),
+    crouch: new Image(),
+    jump: new Image(),
+    doubleJump: new Image(),
+    loaded: { idle: false, crouch: false, jump: false, doubleJump: false }
+  }
+};
+
+function setupSpriteLoaders() {
+  const tryLoad = (imgObj, primary, fallback, key, hero) => {
+    imgObj.onload = () => { heroSprites[hero].loaded[key] = true; };
+    imgObj.onerror = () => {
+      imgObj.onerror = null;
+      imgObj.src = fallback;
+      imgObj.onload = () => { heroSprites[hero].loaded[key] = true; };
+    };
+    imgObj.src = primary;
+  };
+
+  // Zeus (Boy)
+  tryLoad(heroSprites.boy.idle, 'sprites/SBparado.gif', 'SBparado.gif', 'idle', 'boy');
+  tryLoad(heroSprites.boy.crouch, 'sprites/SBagachado.gif', 'SBagachado.gif', 'crouch', 'boy');
+  tryLoad(heroSprites.boy.jump, 'sprites/SBsalto.gif', 'SBsalto.gif', 'jump', 'boy');
+  tryLoad(heroSprites.boy.doubleJump, 'sprites/SBdoblesalto.gif', 'SBdoblesalto.gif', 'doubleJump', 'boy');
+
+  // Inma (Girl)
+  tryLoad(heroSprites.girl.idle, 'sprites/SGparado.gif', 'SGparado.gif', 'idle', 'girl');
+  tryLoad(heroSprites.girl.crouch, 'sprites/SGagachado.gif', 'SGagachado.gif', 'crouch', 'girl');
+  tryLoad(heroSprites.girl.jump, 'sprites/SGsalto.gif', 'SGsalto.gif', 'jump', 'girl');
+  tryLoad(heroSprites.girl.doubleJump, 'sprites/SGdoblesalto.gif', 'SGdoblesalto.gif', 'doubleJump', 'girl');
+}
+
+setupSpriteLoaders();
+
+const player = {
+  x: 160,
+  y: 450,
+  width: 36,
+  height: 44,
+  vx: 0,
+  vy: 0,
+  jumpsLeft: 2,
+  facing: 'right',
+  animState: 'idle',
+  landingTimer: 0,
+  isGrounded: false,
+
+  reset() {
+    this.x = canvas.width / 2 - this.width / 2;
+    this.y = canvas.height - 80;
+    this.vx = 0;
+    this.vy = 0;
+    this.jumpsLeft = 2;
+    this.facing = 'right';
+    this.animState = 'idle';
+    this.isGrounded = true;
+    doubleJumpTrail = [];
+    doubleJumpTrailTick = 0;
+  }
+};
+
+const bgMusic = new Audio();
+bgMusic.loop = true;
+bgMusic.onerror = () => {};
+
+const sfxAudio = new Audio();
+sfxAudio.onerror = () => {};
+
+function toggleMute(e) {
+  if (e) e.stopPropagation();
+  isMuted = !isMuted;
+  bgMusic.muted = isMuted;
+  sfxAudio.muted = isMuted;
+
+  const muteIcon = document.getElementById('mute-icon');
+  const muteText = document.getElementById('mute-text');
+  if (muteIcon) muteIcon.textContent = isMuted ? '🔇' : '🔊';
+  if (muteText) muteText.textContent = isMuted ? 'MUTE' : 'SONIDO';
+}
+
+function playSFX(filename) {
+  if (isMuted) return;
+  const sfxPath = `sound/${filename}`;
+  sfxAudio.src = sfxPath;
+  sfxAudio.onerror = () => {
+    sfxAudio.src = filename;
+  };
+  sfxAudio.volume = isMuted ? 0 : 1;
+  const playPromise = sfxAudio.play();
+  if (playPromise !== undefined) {
+    playPromise.catch(() => {});
+  }
+}
+
+function playBackgroundMusic() {
+  /* Si el jugador ha silenciado el audio, jamás arrancamos la música. */
+  if (isMuted) return;
+
+  const musicFile = selectedHero === 'boy' ? 'sound/zeus.mp3' : 'sound/inma.mp3';
+  if (bgMusic.src.indexOf(musicFile) === -1) {
+    bgMusic.src = musicFile;
+  }
+  bgMusic.muted = false;
+  const playPromise = bgMusic.play();
+  if (playPromise !== undefined) {
+    playPromise.catch(() => {});
+  }
+}
+
+function stopBackgroundMusic() {
+  bgMusic.pause();
+  bgMusic.currentTime = 0;
+}
+
+function selectCharacter(hero, e) {
+  if (e) e.stopPropagation();
+  selectedHero = hero;
+  const cardBoy = document.getElementById('card-boy');
+  const cardGirl = document.getElementById('card-girl');
+  if (cardBoy) cardBoy.classList.toggle('selected', hero === 'boy');
+  if (cardGirl) cardGirl.classList.toggle('selected', hero === 'girl');
+}
+
+function requestFullScreenAndLockOrientation() {
+  try {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch(() => {});
+    } else if (elem.webkitRequestFullscreen) {
+      elem.webkitRequestFullscreen().catch(() => {});
+    } else if (elem.msRequestFullscreen) {
+      elem.msRequestFullscreen().catch(() => {});
+    }
+
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('portrait').catch(() => {});
+    }
+  } catch (err) {}
+}
+
+function checkOrientation() {
+  if (window.innerWidth > window.innerHeight && window.innerWidth < 850) {
+    landscapeWarning.style.display = 'flex';
+  } else {
+    landscapeWarning.style.display = 'none';
+  }
+}
+
+window.addEventListener('resize', checkOrientation);
+
+function setupInput() {
+  /* =========================================================
+     CONTROLES MÓVILES
+
+     ZONA VERDE (izquierda): mantener pulsado = izquierda.
+     ZONA AZUL (derecha): mantener pulsado = derecha.
+     El mismo dedo puede arrastrarse de una zona a la otra
+     para cambiar la dirección sin levantarlo.
+
+     ZONA ROJA (salto): cada toque produce un salto. Un segundo
+     toque mientras se está en el aire produce el doble salto.
+     Mantener pulsado NO repite saltos.
+     ========================================================= */
+
+  const mobileLeft = document.getElementById('mobile-left-zone');
+  const mobileRight = document.getElementById('mobile-right-zone');
+  const mobileJump = document.getElementById('mobile-jump-zone');
+
+  let movementPointerId = null;
+  let movementDirection = null;
+  const jumpPointers = new Set();
+
+  function setMovementDirection(direction) {
+    movementDirection = direction;
+    keys.left = direction === 'left';
+    keys.right = direction === 'right';
+  }
+
+  function movementDirectionAt(clientX, clientY) {
+    if (!mobileLeft || !mobileRight) return null;
+
+    const l = mobileLeft.getBoundingClientRect();
+    const r = mobileRight.getBoundingClientRect();
+
+    if (clientX >= l.left && clientX < l.right &&
+        clientY >= l.top && clientY <= l.bottom) {
+      return 'left';
+    }
+
+    if (clientX >= r.left && clientX < r.right &&
+        clientY >= r.top && clientY <= r.bottom) {
+      return 'right';
+    }
+
+    return null;
+  }
+
+  function startMobileMovement(e, direction) {
+    if (gameState !== 'PLAYING') return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    /* Solo un dedo controla la dirección. El segundo queda libre
+       para tocar SALTO simultáneamente. */
+    if (movementPointerId !== null && movementPointerId !== e.pointerId) return;
+
+    movementPointerId = e.pointerId;
+    setMovementDirection(direction);
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (_) {}
+  }
+
+  function updateMobileMovement(e) {
+    if (movementPointerId !== e.pointerId) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const direction = movementDirectionAt(e.clientX, e.clientY);
+    setMovementDirection(direction);
+  }
+
+  function stopMobileMovement(e) {
+    if (movementPointerId !== e.pointerId) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    movementPointerId = null;
+    setMovementDirection(null);
+  }
+
+  if (mobileLeft) {
+    mobileLeft.addEventListener('pointerdown', e => {
+      startMobileMovement(e, 'left');
+    }, { passive: false });
+  }
+
+  if (mobileRight) {
+    mobileRight.addEventListener('pointerdown', e => {
+      startMobileMovement(e, 'right');
+    }, { passive: false });
+  }
+
+  /* Importante: window permite detectar el arrastre entre zonas. */
+  window.addEventListener('pointermove', updateMobileMovement, { passive: false });
+  window.addEventListener('pointerup', stopMobileMovement, { passive: false });
+  window.addEventListener('pointercancel', stopMobileMovement, { passive: false });
+
+  if (mobileJump) {
+    mobileJump.addEventListener('pointerdown', e => {
+      if (gameState !== 'PLAYING') return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      /* Un pointerdown solo puede contar una vez hasta que se levanta. */
+      if (jumpPointers.has(e.pointerId)) return;
+
+      jumpPointers.add(e.pointerId);
+      triggerJump();
+
+      try {
+        mobileJump.setPointerCapture(e.pointerId);
+      } catch (_) {}
+    }, { passive: false });
+
+    const releaseJump = e => {
+      if (!jumpPointers.has(e.pointerId)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      jumpPointers.delete(e.pointerId);
+    };
+
+    mobileJump.addEventListener('pointerup', releaseJump, { passive: false });
+    mobileJump.addEventListener('pointercancel', releaseJump, { passive: false });
+  }
+
+  /* Botones clásicos para PC/tablet. */
+  const bindTouchBtn = (id, action) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+
+    const start = e => {
+      e.preventDefault();
+      e.stopPropagation();
+      btn.classList.add('active');
+      if (action === 'jump') triggerJump();
+      else keys[action] = true;
+    };
+
+    const end = e => {
+      e.preventDefault();
+      e.stopPropagation();
+      btn.classList.remove('active');
+      if (action !== 'jump') keys[action] = false;
+    };
+
+    btn.addEventListener('touchstart', start, { passive: false });
+    btn.addEventListener('touchend', end, { passive: false });
+    btn.addEventListener('touchcancel', end, { passive: false });
+    btn.addEventListener('mousedown', start);
+    btn.addEventListener('mouseup', end);
+    btn.addEventListener('mouseleave', end);
+  };
+
+  bindTouchBtn('btn-left', 'left');
+  bindTouchBtn('btn-right', 'right');
+  bindTouchBtn('btn-jump', 'jump');
+
+  /* Tocar la zona de VIDAS también reinicia completamente la partida. */
+  if (livesContainer) {
+    const restartFromLives = e => {
+      e.preventDefault();
+      e.stopPropagation();
+      restartGame();
+    };
+    livesContainer.addEventListener('pointerdown', restartFromLives, { passive: false });
+    livesContainer.style.cursor = 'pointer';
+    livesContainer.title = 'Toca para reiniciar';
+  }
+
+  window.addEventListener('blur', () => {
+    movementPointerId = null;
+    movementDirection = null;
+    jumpPointers.clear();
+    keys.left = false;
+    keys.right = false;
+    keys.jump = false;
+  });
+
+  canvas.addEventListener('pointerdown', e => {
+    if (gameState === 'PLAYING' && isPointOverPlayer(e.clientX, e.clientY)) {
+      e.preventDefault();
+      e.stopPropagation();
+      activateEasterEgg();
+    }
+  }, { passive: false });
+
+  window.addEventListener('pointerdown', e => {
+    if (gameState === 'START') return;
+    if (
+      e.target.closest('#mobile-touch-controls') ||
+      e.target.closest('#desktop-touch-controls') ||
+      e.target.closest('#btn-mute') ||
+      e.target.closest('#death-modal')
+    ) return;
+    handleUniversalTouch();
+  });
+
+  window.addEventListener('keydown', e => {
+    /* R = reiniciar completamente la partida desde el nivel 1 */
+    if (e.code === 'KeyR') {
+      e.preventDefault();
+      restartGame();
+      return;
+    }
+
+    if (e.code === 'KeyZ') zKeyDown = true;
+    if (e.code === 'KeyI') iKeyDown = true;
+    if (zKeyDown && iKeyDown) activateEasterEgg();
+
+    /* SOLO la tecla M controla el silencio. ENTER no debe hacerlo. */
+    if (e.code === 'KeyM') {
+      e.preventDefault();
+      toggleMute();
+      return;
+    }
+
+    if (gameState === 'START' || gameState === 'DEAD' || gameState === 'GAMEOVER' || gameState === 'WIN') {
+      if (e.code === 'Space' || e.code === 'Enter') {
+        handleUniversalTouch();
+      }
+      return;
+    }
+
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+      if (!keys.jump) triggerJump();
+      keys.jump = true;
+    }
+  });
+
+  window.addEventListener('keyup', e => {
+    if (e.code === 'KeyZ') zKeyDown = false;
+    if (e.code === 'KeyI') iKeyDown = false;
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.jump = false;
+  });
+}
+
+function handleStartClick(e) {
+  if (e) e.stopPropagation();
+  handleUniversalTouch();
+}
+
+function handleUniversalTouch() {
+  if (gameState === 'START') {
+    requestFullScreenAndLockOrientation();
+    startGame();
+  } else if (gameState === 'DEAD' || gameState === 'GAMEOVER' || gameState === 'WIN') {
+    if (!canInteractAfterDeath) return;
+
+    if (gameState === 'DEAD') {
+      respawnPlayer();
+    } else if (gameState === 'GAMEOVER' || gameState === 'WIN') {
+      returnToSelectionScreen();
+    }
+  }
+}
+
+function triggerJump() {
+  if (gameState !== 'PLAYING') return;
+  if (player.jumpsLeft > 0) {
+    const isDoubleJump = player.jumpsLeft === 1;
+    player.vy = JUMP_FORCE;
+
+    if (!isDoubleJump) {
+      player.animState = 'jumping';
+    } else {
+      player.animState = 'double_jump';
+      doubleJumpTrail = [];
+      doubleJumpTrailTick = 0;
+      addDoubleJumpTrailPoint();
+    }
+
+    player.jumpsLeft--;
+  }
+}
+
+function addDoubleJumpTrailPoint() {
+  doubleJumpTrail.push({
+    x: player.x,
+    y: player.y,
+    facing: player.facing,
+    age: 0
+  });
+  if (doubleJumpTrail.length > 7) doubleJumpTrail.shift();
+}
+
+function updateDoubleJumpTrail() {
+  if (player.animState === 'double_jump') {
+    doubleJumpTrailTick++;
+    if (doubleJumpTrailTick % 2 === 0) addDoubleJumpTrailPoint();
+  }
+
+  doubleJumpTrail.forEach(t => t.age++);
+  doubleJumpTrail = doubleJumpTrail.filter(t => t.age < 16);
+}
+
+function activateEasterEgg() {
+  if (gameState !== 'PLAYING' || heroImmune) return;
+  heroImmune = true;
+}
+
+function isPointOverPlayer(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (clientX - rect.left) * scaleX;
+  const y = (clientY - rect.top) * scaleY + cameraY;
+
+  return x >= player.x - 12 && x <= player.x + player.width + 12 &&
+         y >= player.y - 12 && y <= player.y + player.height + 12;
+}
+
+function generateLevel(lvl) {
+  platforms = [];
+  enemies = [];
+
+  // Plataforma inicial
+  platforms.push({ x: 15, y: canvas.height - 40, width: canvas.width - 30, height: 18, vx: 0, isMoving: false });
+
+  const totalPlatforms = 12 + lvl * 3;
+  let currentY = canvas.height - 120;
+
+  for (let i = 0; i < totalPlatforms; i++) {
+    const minWidth = Math.max(65, 115 - lvl * 4);
+    const pWidth = Math.floor(Math.random() * 25) + minWidth;
+    const pX = Math.floor(Math.random() * (canvas.width - pWidth - 30)) + 15;
+    
+    let vx = 0;
+    let isMoving = false;
+    if (lvl >= 2 && Math.random() < 0.25 + lvl * 0.05) {
+      vx = (Math.random() > 0.5 ? 1 : -1) * (1 + lvl * 0.2);
+      isMoving = true;
+    }
+
+    platforms.push({ x: pX, y: currentY, width: pWidth, height: 16, vx: vx, isMoving: isMoving });
+
+    // Enemigos en plataformas intermedias
+    if (lvl >= 3 && Math.random() < 0.35 && i > 1 && i < totalPlatforms - 2) {
+      enemies.push({
+        x: pX + pWidth / 2 - 14,
+        y: currentY - 26,
+        width: 28,
+        height: 26,
+        vx: (Math.random() > 0.5 ? 1.2 : -1.2) * (1 + lvl * 0.1)
+      });
+    }
+
+    currentY -= (70 + Math.random() * 25);
+  }
+
+  // Plataforma Meta
+  goalPlatform = {
+    x: canvas.width / 2 - 60,
+    y: currentY - 30,
+    width: 120,
+    height: 22
+  };
+}
+
+function update() {
+  if (gameState !== 'PLAYING') return;
+
+  gameTime += 0.05;
+
+  if (keys.left) {
+    player.vx = -MOVE_SPEED;
+    player.facing = 'left';
+  } else if (keys.right) {
+    player.vx = MOVE_SPEED;
+    player.facing = 'right';
+  } else {
+    player.vx = 0;
+  }
+
+  player.vy += GRAVITY;
+  player.x += player.vx;
+  player.y += player.vy;
+
+  if (player.x < 0) player.x = 0;
+  if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+  if (player.vy > 1.5 && player.animState !== 'double_jump') {
+    player.animState = 'landing';
+  }
+
+  if (player.landingTimer > 0) {
+    player.landingTimer--;
+    if (player.landingTimer === 0 && player.vy === 0) {
+      player.animState = 'idle';
+    }
+  }
+
+  player.isGrounded = false;
+  platforms.forEach(p => {
+    if (p.vx !== 0) {
+      p.x += p.vx;
+      if (p.x <= 10 || p.x + p.width >= canvas.width - 10) p.vx *= -1;
+    }
+
+    if (
+      player.vy > 0 &&
+      player.x + player.width > p.x &&
+      player.x < p.x + p.width &&
+      player.y + player.height >= p.y &&
+      player.y + player.height <= p.y + p.height + player.vy + 2
+    ) {
+      player.y = p.y - player.height;
+      player.vy = 0;
+      player.jumpsLeft = 2; 
+      player.isGrounded = true;
+
+      if (player.animState === 'jumping' || player.animState === 'double_jump' || player.animState === 'landing') {
+        player.animState = 'landing';
+        player.landingTimer = 6;
+      }
+
+      if (p.vx !== 0) player.x += p.vx;
+    }
+  });
+
+  if (
+    goalPlatform && player.vy > 0 &&
+    player.x + player.width > goalPlatform.x && player.x < goalPlatform.x + goalPlatform.width &&
+    player.y + player.height >= goalPlatform.y && player.y + player.height <= goalPlatform.y + goalPlatform.height + player.vy + 2
+  ) {
+    nextLevel();
+    return;
+  }
+
+  enemies.forEach(e => {
+    e.x += e.vx;
+    if (e.x <= 5 || e.x + e.width >= canvas.width - 5) e.vx *= -1;
+
+    if (!heroImmune &&
+      player.x < e.x + e.width && player.x + player.width > e.x &&
+      player.y < e.y + e.height && player.y + player.height > e.y
+    ) {
+      handlePlayerDeath();
+    }
+  });
+
+  updateDoubleJumpTrail();
+
+  if (player.y < canvas.height / 2 + cameraY) {
+    cameraY = player.y - canvas.height / 2;
+  }
+
+  if (player.y > cameraY + canvas.height + 40) {
+    handlePlayerDeath();
+  }
+}
+
+function startDeathCooldown() {
+  canInteractAfterDeath = false;
+  let remainingSeconds = 3;
+  
+  if (deathCooldownText) {
+    deathCooldownText.style.display = 'block';
+    deathCooldownText.textContent = `Espera (${remainingSeconds}s)...`;
+  }
+
+  if (cooldownTimer) clearTimeout(cooldownTimer);
+  if (cooldownInterval) clearInterval(cooldownInterval);
+
+  cooldownInterval = setInterval(() => {
+    remainingSeconds--;
+    if (remainingSeconds > 0) {
+      if (deathCooldownText) deathCooldownText.textContent = `Espera (${remainingSeconds}s)...`;
+    } else {
+      clearInterval(cooldownInterval);
+    }
+  }, 1000);
+
+  cooldownTimer = setTimeout(() => {
+    canInteractAfterDeath = true;
+    if (deathCooldownText) {
+      deathCooldownText.style.display = 'none';
+    }
+  }, 3000);
+}
+
+function resetDeathModalStyle() {
+  if (deathGifContainer) {
+    deathGifContainer.className = 'w-[150px] h-[164px] bg-slate-900/90 border-2 border-red-500 rounded-2xl flex flex-col items-center justify-center p-2 shadow-2xl relative overflow-hidden transition-all duration-300';
+  }
+}
+
+function handlePlayerDeath() {
+  if (gameState === 'DEAD' || gameState === 'GAMEOVER') return;
+
+  lives--;
+  updateHUD();
+
+  const playerName = selectedHero === 'boy' ? 'Zeus' : 'Inma';
+  resetDeathModalStyle();
+
+  if (lives <= 0) {
+    gameState = 'GAMEOVER';
+    stopBackgroundMusic();
+    playSFX('gameover.mp3');
+
+    const goPath = selectedHero === 'boy' ? 'sprites/SBgameover.gif' : 'sprites/SGgameover.gif';
+    deathGif.src = goPath;
+    deathGif.onerror = () => {
+      deathGif.src = selectedHero === 'boy' ? 'SBgameover.gif' : 'SGgameover.gif';
+    };
+    deathTitle.textContent = '¡GAME OVER!';
+    deathSubtitle.textContent = `¡Se te cayó la máscara, ${playerName}!`;
+  } else {
+    gameState = 'DEAD';
+    const deadPath = selectedHero === 'boy' ? 'sprites/SBmuerte.gif' : 'sprites/SGmuerte.gif';
+    deathGif.src = deadPath;
+    deathGif.onerror = () => {
+      deathGif.src = selectedHero === 'boy' ? 'SBmuerte.gif' : 'SGmuerte.gif';
+    };
+    deathTitle.textContent = '¡HAS PERDIDO 1 VIDA!';
+    deathSubtitle.textContent = `¡Cuidado, ${playerName}! Toca para continuar`;
+  }
+
+  startDeathCooldown();
+  deathModal.classList.remove('hidden');
+}
+
+function respawnPlayer() {
+  deathModal.classList.add('hidden');
+  resetDeathModalStyle();
+  player.reset();
+  cameraY = 0;
+  gameState = 'PLAYING';
+  /* No reiniciamos la música al perder una vida. */
+}
+
+function returnToSelectionScreen() {
+  deathModal.classList.add('hidden');
+  resetDeathModalStyle();
+  stopBackgroundMusic();
+  gameState = 'START';
+  startScreen.style.display = 'flex';
+}
+
+function nextLevel() {
+  if (currentLevel < 10) {
+    currentLevel++;
+    updateHUD();
+    player.reset();
+    cameraY = 0;
+    generateLevel(currentLevel);
+  } else {
+    gameState = 'WIN';
+    stopBackgroundMusic();
+    playSFX('victoria.mp3');
+
+    const playerName = selectedHero === 'boy' ? 'Zeus' : 'Inma';
+
+    if (deathGifContainer) {
+      deathGifContainer.className = 'w-[210px] h-[190px] bg-gradient-to-br from-amber-500 via-yellow-400 to-amber-600 border-4 border-yellow-200 rounded-3xl flex flex-col items-center justify-center p-3 shadow-2xl shadow-yellow-500/50 relative overflow-hidden animate-pulse';
+    }
+
+    deathGif.src = 'ganaste.png';
+    deathGif.onerror = () => {
+      deathGif.src = 'sprites/ganaste.png';
+      deathGif.onerror = () => {
+        deathGif.src = selectedHero === 'boy' ? 'sprites/selecB.gif' : 'sprites/selecG.gif';
+      };
+    };
+
+    deathTitle.textContent = '¡VICTORIA TOTAL!';
+    deathSubtitle.textContent = `¡Enhorabuena, ${playerName}! Has completado los 10 niveles`;
+    startDeathCooldown();
+    deathModal.classList.remove('hidden');
+  }
+}
+
+function updateHUD() {
+  if (levelDisplay) levelDisplay.textContent = currentLevel;
+  if (livesContainer) {
+    livesContainer.innerHTML = '';
+    for (let i = 0; i < lives; i++) {
+      const heart = document.createElement('span');
+      heart.textContent = '❤️';
+      heart.className = 'text-xs animate-pulse';
+      livesContainer.appendChild(heart);
+    }
+  }
+}
+
+
+// Dibujado procedural de fondo y elementos
+function drawBackground() {
+  const bgGrad = ctx.createLinearGradient(0, cameraY, 0, cameraY + canvas.height);
+  bgGrad.addColorStop(0, '#0f172a');
+  bgGrad.addColorStop(0.5, '#090d16');
+  bgGrad.addColorStop(1, '#020617');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, cameraY, canvas.width, canvas.height);
+
+  // Cuadrícula y siluetas de edificios estilo Spidey
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+  ctx.lineWidth = 1;
+  const gridStep = 40;
+  const startY = Math.floor(cameraY / gridStep) * gridStep;
+  for (let y = startY; y < cameraY + canvas.height; y += gridStep) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+}
+
+function drawPlatform(p) {
+  ctx.save();
+  
+  if (p.isMoving) {
+    // Plataforma Móvil
+    ctx.fillStyle = '#0f172a';
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(p.x, p.y, p.width, p.height, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    // Luces neón azules
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillRect(p.x + 6, p.y + 3, p.width - 12, 3);
+    
+    // Propulsores laterales
+    ctx.fillStyle = (Math.sin(gameTime * 10) > 0) ? '#00f0ff' : '#0284c7';
+    ctx.fillRect(p.x - 2, p.y + 4, 4, p.height - 8);
+    ctx.fillRect(p.x + p.width - 2, p.y + 4, 4, p.height - 8);
+  } else {
+    // Plataforma Normal Estilizada
+    const grad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.height);
+    grad.addColorStop(0, '#334155');
+    grad.addColorStop(1, '#1e293b');
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.roundRect(p.x, p.y, p.width, p.height, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // Detalle de telaraña en la plataforma
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(p.x + 10, p.y);
+    ctx.lineTo(p.x + 20, p.y + p.height);
+    ctx.moveTo(p.x + p.width - 10, p.y);
+    ctx.lineTo(p.x + p.width - 20, p.y + p.height);
+    ctx.stroke();
+
+    // Borde brillante superior
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillRect(p.x + 4, p.y + 2, p.width - 8, 2);
+  }
+
+  ctx.restore();
+}
+
+function drawGoalPlatform(p) {
+  ctx.save();
+  // Podio Dorado Neón
+  const goldGrad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.height);
+  goldGrad.addColorStop(0, '#fbbf24');
+  goldGrad.addColorStop(1, '#d97706');
+
+  ctx.fillStyle = goldGrad;
+  ctx.strokeStyle = '#fef08a';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.roundRect(p.x, p.y, p.width, p.height, 8);
+  ctx.fill();
+  ctx.stroke();
+
+  // Brillo pulsante
+  const glow = Math.sin(gameTime * 5) * 3;
+  ctx.shadowColor = '#f59e0b';
+  ctx.shadowBlur = 10 + glow;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 11px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🏆 META 🏆', p.x + p.width / 2, p.y + 15);
+
+  ctx.restore();
+}
+
+function drawEnemy(e) {
+  ctx.save();
+  // Spider-Bot Malvado
+  ctx.fillStyle = '#dc2626';
+  ctx.beginPath();
+  ctx.arc(e.x + e.width / 2, e.y + e.height / 2, e.width / 2 - 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Patas robóticas
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = 2;
+  const legOffset = Math.sin(gameTime * 12) * 3;
+  
+  ctx.beginPath();
+  ctx.moveTo(e.x, e.y + e.height / 2);
+  ctx.lineTo(e.x - 6, e.y + e.height / 2 + legOffset);
+  ctx.moveTo(e.x + e.width, e.y + e.height / 2);
+  ctx.lineTo(e.x + e.width + 6, e.y + e.height / 2 - legOffset);
+  ctx.stroke();
+
+  // Ojo Ciber Neón
+  ctx.fillStyle = '#fef08a';
+  ctx.beginPath();
+  ctx.arc(e.x + e.width / 2, e.y + e.height / 2 - 2, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawDoubleJumpTrail() {
+  if (doubleJumpTrail.length === 0) return;
+
+  const isBoy = selectedHero === 'boy';
+  const heroKey = isBoy ? 'boy' : 'girl';
+  const img = heroSprites[heroKey].doubleJump;
+  if (!heroSprites[heroKey].loaded.doubleJump || !img || !img.complete || img.naturalWidth === 0) return;
+
+  ctx.save();
+  ctx.filter = 'blur(2.5px)';
+
+  for (let i = 0; i < doubleJumpTrail.length; i++) {
+    const t = doubleJumpTrail[i];
+    const fade = Math.max(0, 1 - (i + 1) / (doubleJumpTrail.length + 1));
+    ctx.globalAlpha = 0.08 + fade * 0.18;
+
+    const centerX = t.x + player.width / 2;
+    const centerY = t.y + player.height / 2;
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    if (t.facing === 'left') ctx.scale(-1, 1);
+    ctx.drawImage(img, -player.width / 2 - 4, -player.height / 2 - 4, player.width + 8, player.height + 8);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+function drawPlayer() {
+  ctx.save();
+
+  const isBoy = selectedHero === 'boy';
+  const heroKey = isBoy ? 'boy' : 'girl';
+
+  // Selección de animación según estado exacto de física
+  let animState = 'idle';
+  if (player.animState === 'double_jump' || (player.jumpsLeft === 0 && player.vy !== 0)) {
+    animState = 'doubleJump';
+  } else if (player.animState === 'jumping' || player.vy < 0) {
+    animState = 'jump';
+  } else if (player.animState === 'landing' || player.landingTimer > 0) {
+    animState = 'crouch';
+  } else {
+    animState = 'idle';
+  }
+
+  const currentImg = heroSprites[heroKey][animState];
+  const isLoaded = heroSprites[heroKey].loaded[animState];
+
+  // Girar canvas según dirección del héroe
+  const centerX = player.x + player.width / 2;
+  const centerY = player.y + player.height / 2;
+
+  ctx.translate(centerX, centerY);
+  if (player.facing === 'left') {
+    ctx.scale(-1, 1);
+  }
+
+  if (isLoaded && currentImg && currentImg.complete && currentImg.naturalWidth !== 0) {
+    // Renderizado del GIF correspondiente
+    ctx.drawImage(currentImg, -player.width / 2 - 4, -player.height / 2 - 4, player.width + 8, player.height + 8);
+  } else {
+    // Fallback Vectorial Estilizado (Spidey / Gwen)
+    const suitPrimary = isBoy ? '#dc2626' : '#ec4899';
+    const suitSecondary = isBoy ? '#2563eb' : '#0f172a';
+
+    ctx.fillStyle = suitPrimary;
+    ctx.beginPath();
+    ctx.roundRect(-player.width / 2, -player.height / 2, player.width, player.height, 10);
+    ctx.fill();
+
+    ctx.fillStyle = suitSecondary;
+    ctx.fillRect(-player.width / 2 + 6, -player.height / 2 + 18, player.width - 12, 16);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.ellipse(4, -player.height / 2 + 12, 6, 9, Math.PI / 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(0, 2, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.save();
+  ctx.translate(0, -cameraY);
+
+  // 1. Fondo estilizado
+  drawBackground();
+
+  // 2. Plataformas
+  platforms.forEach(p => drawPlatform(p));
+
+  // 3. Meta
+  if (goalPlatform) drawGoalPlatform(goalPlatform);
+
+  // 4. Enemigos
+  enemies.forEach(e => drawEnemy(e));
+
+  // 5. Estela difuminada del doble salto
+  drawDoubleJumpTrail();
+
+  // 6. Jugador
+  drawPlayer();
+
+  ctx.restore();
+}
+
+function startGame() {
+  startScreen.style.display = 'none';
+  restartGame();
+}
+
+function restartGame() {
+  deathModal.classList.add('hidden');
+  resetDeathModalStyle();
+  currentLevel = 1;
+  lives = 10;
+  heroImmune = false;
+  doubleJumpTrail = [];
+  gameState = 'PLAYING';
+  updateHUD();
+  player.reset();
+  cameraY = 0;
+  generateLevel(currentLevel);
+  playBackgroundMusic();
+}
+
+function gameLoop() {
+  update();
+  render();
+  requestAnimationFrame(gameLoop);
+}
+
+window.onload = () => {
+  checkOrientation();
+  setupInput();
+  updateHUD();
+  requestAnimationFrame(gameLoop);
+};
+</script>
+</body>
+</html>
